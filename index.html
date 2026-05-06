@@ -18,11 +18,28 @@
       <button class="src-tab" data-src="cosmos">Cosmos</button>
     </nav>
     <div class="actions">
+      <button id="help-btn" class="ghost help-btn" title="how to use">?</button>
       <button id="undo-btn" class="ghost" disabled title="undo (⌘Z)">undo</button>
       <button id="export-btn" class="ghost">export png</button>
       <button id="clear-btn" class="ghost">clear</button>
     </div>
   </header>
+
+  <div id="guide-overlay" class="guide-overlay" hidden aria-hidden="true">
+    <div class="guide-card" role="dialog" aria-modal="true" aria-labelledby="guide-title">
+      <button id="guide-close" class="guide-close" aria-label="close">✕</button>
+      <h1 id="guide-title" class="guide-title">cut it out</h1>
+      <p class="guide-flow">pick → place → cut → export</p>
+      <ul class="guide-steps">
+        <li>click a thumbnail to add it to the page</li>
+        <li>drag to move, scroll or corners to scale</li>
+        <li>pick a cut tool, then click the edge you want to cut</li>
+        <li>hit <em>export png</em> when you're done</li>
+      </ul>
+      <p class="guide-shortcuts">⌘D duplicate · ⌘Z undo · drag layers panel to reorder</p>
+      <button id="guide-start" class="guide-start">start</button>
+    </div>
+  </div>
 
   <main class="layout">
     <aside class="rail tools">

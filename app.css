@@ -252,6 +252,87 @@ button { font: inherit; color: inherit; cursor: pointer; }
 }
 .layer-show:hover { color: var(--ink); border-color: var(--ink); }
 
+/* help button — circular, sits in actions group */
+.help-btn {
+  width: 28px; height: 28px; padding: 0;
+  border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: var(--serif); font-style: italic; font-size: 14px;
+  letter-spacing: 0; text-transform: none;
+}
+
+/* guide overlay */
+.guide-overlay {
+  position: fixed; inset: 0;
+  background: rgba(42, 36, 24, 0.32);
+  backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 50;
+  animation: guide-fade-in 0.25s ease-out;
+}
+@keyframes guide-fade-in { from { opacity: 0; } to { opacity: 1; } }
+.guide-card {
+  position: relative;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  box-shadow: 0 8px 32px rgba(42, 36, 24, 0.18);
+  padding: 36px 44px 32px;
+  max-width: 460px; width: calc(100vw - 48px);
+  text-align: left;
+}
+.guide-close {
+  position: absolute; top: 10px; right: 12px;
+  background: none; border: 0; padding: 4px 8px;
+  font-family: var(--sans); font-size: 14px;
+  color: var(--ink-mid); cursor: pointer;
+}
+.guide-close:hover { color: var(--ink); }
+.guide-title {
+  margin: 0 0 4px;
+  font-family: var(--serif); font-weight: 500;
+  font-size: 28px; letter-spacing: 0.01em; color: var(--ink);
+}
+.guide-flow {
+  margin: 0 0 22px;
+  font-family: var(--serif); font-style: italic;
+  font-size: 14px; color: var(--ink-mid);
+  letter-spacing: 0.04em;
+}
+.guide-steps {
+  list-style: none; padding: 0; margin: 0 0 22px;
+  font-family: var(--sans); font-size: 13px; color: var(--ink);
+  line-height: 1.7;
+}
+.guide-steps li {
+  position: relative; padding-left: 18px;
+}
+.guide-steps li::before {
+  content: '·'; position: absolute; left: 4px; top: -2px;
+  font-size: 18px; color: var(--ink-mid);
+}
+.guide-steps em {
+  font-style: italic; font-family: var(--serif); color: var(--ink);
+}
+.guide-shortcuts {
+  margin: 0 0 24px;
+  font-family: var(--serif); font-style: italic;
+  font-size: 12px; color: var(--ink-mid);
+  border-top: 1px solid var(--line-soft);
+  padding-top: 14px;
+}
+.guide-start {
+  background: var(--ink); color: var(--paper);
+  border: 0; padding: 10px 28px;
+  font-family: var(--serif); font-style: italic; font-size: 14px;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+}
+.guide-start:hover { background: #1a160e; }
+@media (max-width: 700px) {
+  .guide-card { padding: 28px 24px 24px; max-width: 360px; }
+  .guide-title { font-size: 22px; }
+}
+
 /* coarse-pointer (touch) — beefier hit targets, larger thumb sliders */
 @media (pointer: coarse) {
   .opacity-control input[type="range"]::-webkit-slider-thumb { width: 18px; height: 18px; }
