@@ -465,20 +465,17 @@ function edgeSegment(style, sx, sy, ex, ey, amp, rng) {
 function renderLayerPanel() {
   const list = document.getElementById('layer-list');
   const panel = document.getElementById('layer-panel');
-  const showBtn = document.getElementById('layer-show-btn');
   if (!list || !panel) return;
   list.innerHTML = '';
   if (state.pieces.length === 0) {
     panel.hidden = true;
-    showBtn.hidden = true;
     return;
   }
+  panel.hidden = false;
+  const collapsed = panel.dataset.collapsed === '1';
+  syncLayerAccordion(collapsed);
   if (panel.dataset.collapsed === '1') {
-    panel.hidden = true;
-    showBtn.hidden = false;
-  } else {
-    panel.hidden = false;
-    showBtn.hidden = true;
+    return;
   }
   const sorted = [...state.pieces].sort((a, b) => b.z - a.z);
   for (const piece of sorted) {
@@ -506,6 +503,20 @@ function renderLayerPanel() {
     li.appendChild(eye);
     li.addEventListener('pointerdown', (e) => onLayerRowPointerDown(e, piece.id));
     list.appendChild(li);
+  }
+}
+
+function syncLayerAccordion(collapsed) {
+  const panel = document.getElementById('layer-panel');
+  const toggle = document.getElementById('layer-toggle');
+  const list = document.getElementById('layer-list');
+  if (!panel) return;
+  panel.classList.toggle('collapsed', collapsed);
+  if (list) list.hidden = collapsed;
+  if (toggle) {
+    toggle.textContent = collapsed ? '+' : '–';
+    toggle.title = collapsed ? 'expand layers' : 'collapse layers';
+    toggle.setAttribute('aria-expanded', String(!collapsed));
   }
 }
 
@@ -1556,12 +1567,10 @@ document.getElementById('undo-btn').addEventListener('click', undo);
 // ---------- layer panel toggle ----------
 document.getElementById('layer-toggle').addEventListener('click', () => {
   const panel = document.getElementById('layer-panel');
-  panel.dataset.collapsed = '1';
-  renderLayerPanel();
-});
-document.getElementById('layer-show-btn').addEventListener('click', () => {
-  const panel = document.getElementById('layer-panel');
-  delete panel.dataset.collapsed;
+  const collapsed = panel.dataset.collapsed !== '1';
+  if (collapsed) panel.dataset.collapsed = '1';
+  else delete panel.dataset.collapsed;
+  syncLayerAccordion(collapsed);
   renderLayerPanel();
 });
 
