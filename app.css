@@ -135,6 +135,11 @@ button { font: inherit; color: inherit; cursor: pointer; }
   color: var(--ink-mid); cursor: pointer;
 }
 .bar-link:hover { color: var(--ink); }
+.bar-link.active {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 .edge-ribbon { fill: rgba(42,36,24,0.05); cursor: pointer; }
 .edge-ribbon:hover { fill: rgba(42,36,24,0.18); }
 .edge-ribbon.active { fill: rgba(42,36,24,0.10); stroke: var(--ink); stroke-width: 1; stroke-dasharray: 3 2; }

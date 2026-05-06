@@ -100,6 +100,11 @@ function syncPieceBar() {
   const edgeSlider = document.getElementById('edge-slider');
   const edgeReadout = document.getElementById('edge-readout');
   const resetBtn = document.getElementById('reset-edges-btn');
+  const imageZoomWrap = document.getElementById('image-zoom-wrap');
+  const imageZoomSlider = document.getElementById('image-zoom-slider');
+  const imageZoomReadout = document.getElementById('image-zoom-readout');
+  const adjustBtn = document.getElementById('adjust-image-btn');
+  const fitBtn = document.getElementById('fit-image-btn');
   if (!state.selectedId) { bar.hidden = true; return; }
   const piece = state.pieces.find(p => p.id === state.selectedId);
   if (!piece) { bar.hidden = true; return; }
@@ -114,7 +119,17 @@ function syncPieceBar() {
     edgeSlider.value = piece.edgeIntensity ?? 12;
     edgeReadout.textContent = (piece.edgeIntensity ?? 12) + 'px';
   }
-  document.getElementById('remove-mask-btn').hidden = !piece.lassoPath;
+  const hasMask = !!piece.lassoPath;
+  imageZoomWrap.hidden = !hasMask;
+  adjustBtn.hidden = !hasMask;
+  fitBtn.hidden = !hasMask;
+  adjustBtn.classList.toggle('active', state.tool === 'adjust');
+  adjustBtn.textContent = state.tool === 'adjust' ? 'done adjusting' : 'adjust image';
+  if (hasMask) {
+    imageZoomSlider.value = Math.round((piece.imageScale ?? 1) * 100);
+    imageZoomReadout.textContent = Math.round((piece.imageScale ?? 1) * 100) + '%';
+  }
+  document.getElementById('remove-mask-btn').hidden = !hasMask;
 }
 
 function setTool(tool) {
@@ -126,6 +141,8 @@ function setTool(tool) {
   toolHint.textContent =
     tool === 'crop'
       ? (state.selectedId ? 'drag handles to crop · click outside to finish' : 'select a piece, then crop')
+      : tool === 'adjust'
+        ? 'drag image inside mask · scroll or image slider to zoom'
       : tool === 'mask'
         ? (state.selectedId ? 'drag a shape on the piece · release to mask' : 'select a piece, then mask')
         : isEdgeTool(tool)
@@ -221,6 +238,9 @@ function addPieceFromImage(img, opts = {}) {
   piece.edges = opts.edges ?? { n: 'clean', e: 'clean', s: 'clean', w: 'clean' };
   piece.edgeIntensity = opts.edgeIntensity ?? 12;
   piece.seed = opts.seed ?? Math.floor(Math.random() * 0xFFFFFF);
+  piece.imageX = opts.imageX ?? 0;
+  piece.imageY = opts.imageY ?? 0;
+  piece.imageScale = opts.imageScale ?? 1;
   state.pieces.push(piece);
   renderPiece(piece);
   selectPiece(piece.id);
@@ -283,6 +303,14 @@ function renderPiece(piece) {
   img.setAttribute('href', piece.src);
   img.setAttribute('width', piece.w);
   img.setAttribute('height', piece.h);
+  const imageScale = piece.imageScale ?? 1;
+  const imageX = piece.imageX ?? 0;
+  const imageY = piece.imageY ?? 0;
+  if (hasLasso) {
+    img.setAttribute('transform', `translate(${imageX} ${imageY}) translate(${piece.w / 2} ${piece.h / 2}) scale(${imageScale}) translate(${-piece.w / 2} ${-piece.h / 2})`);
+  } else {
+    img.removeAttribute('transform');
+  }
   if (needsClip && !cropping) img.setAttribute('clip-path', `url(#${clipId})`);
   else img.removeAttribute('clip-path');
   const baseOpacity = piece.opacity ?? 1;
@@ -591,6 +619,9 @@ function duplicatePiece(id) {
     crop: orig.crop ? { ...orig.crop } : null,
     edges: orig.edges ? { ...orig.edges } : { n: 'clean', e: 'clean', s: 'clean', w: 'clean' },
     seed: Math.floor(Math.random() * 0xFFFFFF),
+    imageX: orig.imageX ?? 0,
+    imageY: orig.imageY ?? 0,
+    imageScale: orig.imageScale ?? 1,
   };
   state.pieces.push(piece);
   renderPiece(piece);
@@ -618,6 +649,7 @@ function renderOverlay() {
   if (!state.selectedId) return;
   const piece = state.pieces.find(p => p.id === state.selectedId);
   if (!piece) return;
+  if (state.tool === 'adjust' && !piece.lassoPath) setTool('select');
 
   const cx = piece.x + piece.w / 2;
   const cy = piece.y + piece.h / 2;
@@ -867,6 +899,22 @@ surface.addEventListener('pointerdown', (evt) => {
     return;
   }
 
+  if (state.tool === 'adjust' && state.selectedId && pieceEl?.dataset.id === state.selectedId) {
+    const piece = state.pieces.find(p => p.id === state.selectedId);
+    if (!piece?.lassoPath) return;
+    pushHistory();
+    drag = {
+      kind: 'adjust-image',
+      piece,
+      startX: pt.x,
+      startY: pt.y,
+      imageX: piece.imageX ?? 0,
+      imageY: piece.imageY ?? 0,
+    };
+    surface.setPointerCapture(evt.pointerId);
+    return;
+  }
+
   if (cropHandleEl && state.selectedId) {
     const piece = state.pieces.find(p => p.id === state.selectedId);
     pushHistory();
@@ -992,6 +1040,14 @@ surface.addEventListener('pointermove', (evt) => {
       drag.points.push(local);
       renderLassoPreview(drag);
     }
+  } else if (drag.kind === 'adjust-image') {
+    const dx = pt.x - drag.startX;
+    const dy = pt.y - drag.startY;
+    const rad = -drag.piece.rot * Math.PI / 180;
+    drag.piece.imageX = drag.imageX + dx * Math.cos(rad) - dy * Math.sin(rad);
+    drag.piece.imageY = drag.imageY + dx * Math.sin(rad) + dy * Math.cos(rad);
+    renderPiece(drag.piece);
+    renderOverlay();
   } else if (drag.kind === 'crop-handle') {
     const local = worldToPieceLocal(pt, drag.piece);
     const lx = clamp(local.x, 0, 1);
@@ -1023,12 +1079,18 @@ surface.addEventListener('pointerup', () => {
   } else if (drag.kind === 'lasso') {
     if (drag.points.length >= 3) {
       drag.piece.lassoPath = pointsToPath(drag.points);
+      drag.piece.imageX = drag.piece.imageX ?? 0;
+      drag.piece.imageY = drag.piece.imageY ?? 0;
+      drag.piece.imageScale = drag.piece.imageScale ?? 1;
       renderPiece(drag.piece);
       renderOverlay();
       syncPieceBar();
       saveState();
     }
     setTool('select');
+  } else if (drag.kind === 'adjust-image') {
+    syncPieceBar();
+    saveState();
   } else {
     document.getElementById(drag.piece.id)?.classList.remove('dragging');
     saveState();
@@ -1071,6 +1133,13 @@ surface.addEventListener('wheel', (evt) => {
   if (!piece) return;
   evt.preventDefault();
   const factor = Math.exp(-evt.deltaY * 0.0015);
+  if (state.tool === 'adjust' && piece.lassoPath) {
+    piece.imageScale = clamp((piece.imageScale ?? 1) * factor, 0.5, 3);
+    renderPiece(piece);
+    syncPieceBar();
+    scheduleSave();
+    return;
+  }
   const newW = Math.max(40, piece.w * factor);
   const newH = piece.h * (newW / piece.w);
   // scale around piece center (no anchor shift)
@@ -1235,6 +1304,9 @@ function saveState() {
       edgeIntensity: p.edgeIntensity ?? 12,
       seed: p.seed ?? 1,
       lassoPath: p.lassoPath || null,
+      imageX: p.imageX ?? 0,
+      imageY: p.imageY ?? 0,
+      imageScale: p.imageScale ?? 1,
       hidden: !!p.hidden,
     })),
     nextZ: state.nextZ,
@@ -1254,6 +1326,9 @@ function loadState() {
       edges: p.edges || { n: 'clean', e: 'clean', s: 'clean', w: 'clean' },
       edgeIntensity: p.edgeIntensity ?? 12,
       seed: p.seed ?? Math.floor(Math.random() * 0xFFFFFF),
+      imageX: p.imageX ?? 0,
+      imageY: p.imageY ?? 0,
+      imageScale: p.imageScale ?? 1,
       hidden: !!p.hidden,
     }));
     state.nextZ = data.nextZ || 1;
@@ -1379,6 +1454,43 @@ edgeSlider.addEventListener('input', () => {
 });
 edgeSlider.addEventListener('change', () => saveState());
 
+const imageZoomSlider = document.getElementById('image-zoom-slider');
+const imageZoomReadout = document.getElementById('image-zoom-readout');
+imageZoomSlider.addEventListener('pointerdown', () => { if (state.selectedId) pushHistory(); });
+imageZoomSlider.addEventListener('input', () => {
+  if (!state.selectedId) return;
+  const piece = state.pieces.find(p => p.id === state.selectedId);
+  if (!piece?.lassoPath) return;
+  const v = clamp(Number(imageZoomSlider.value) / 100, 0.5, 3);
+  piece.imageScale = v;
+  imageZoomReadout.textContent = Math.round(v * 100) + '%';
+  renderPiece(piece);
+  scheduleSave();
+});
+imageZoomSlider.addEventListener('change', () => saveState());
+
+document.getElementById('adjust-image-btn').addEventListener('click', () => {
+  if (!state.selectedId) return;
+  const piece = state.pieces.find(p => p.id === state.selectedId);
+  if (!piece?.lassoPath) return;
+  setTool(state.tool === 'adjust' ? 'select' : 'adjust');
+  syncPieceBar();
+});
+
+document.getElementById('fit-image-btn').addEventListener('click', () => {
+  if (!state.selectedId) return;
+  const piece = state.pieces.find(p => p.id === state.selectedId);
+  if (!piece?.lassoPath) return;
+  pushHistory();
+  piece.imageX = 0;
+  piece.imageY = 0;
+  piece.imageScale = 1;
+  renderPiece(piece);
+  renderOverlay();
+  syncPieceBar();
+  saveState();
+});
+
 document.getElementById('reset-edges-btn').addEventListener('click', () => {
   if (!state.selectedId) return;
   const piece = state.pieces.find(p => p.id === state.selectedId);
@@ -1397,6 +1509,10 @@ document.getElementById('remove-mask-btn').addEventListener('click', () => {
   if (!piece) return;
   pushHistory();
   piece.lassoPath = null;
+  piece.imageX = 0;
+  piece.imageY = 0;
+  piece.imageScale = 1;
+  if (state.tool === 'adjust') setTool('select');
   renderPiece(piece);
   renderOverlay();
   syncPieceBar();

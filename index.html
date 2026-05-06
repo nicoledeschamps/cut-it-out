@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=Inter:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="app.css?v=20260506-2">
+  <link rel="stylesheet" href="app.css?v=20260506-3">
 </head>
 <body>
   <header class="topbar">
@@ -149,7 +149,14 @@
           <input id="edge-slider" type="range" min="3" max="40" value="12" step="1">
           <span id="edge-readout" class="readout">12px</span>
         </label>
+        <label class="opacity-control" id="image-zoom-wrap" hidden>
+          <span>image</span>
+          <input id="image-zoom-slider" type="range" min="50" max="300" value="100" step="1">
+          <span id="image-zoom-readout" class="readout">100%</span>
+        </label>
         <button id="reset-edges-btn" class="bar-link" hidden>reset edges</button>
+        <button id="adjust-image-btn" class="bar-link" hidden>adjust image</button>
+        <button id="fit-image-btn" class="bar-link" hidden>fit image</button>
         <button id="remove-mask-btn" class="bar-link" hidden>remove mask</button>
       </div>
     </section>
@@ -161,6 +168,6 @@
     </aside>
   </main>
 
-  <script type="module" src="app.js?v=20260506-2"></script>
+  <script type="module" src="app.js?v=20260506-3"></script>
 </body>
 </html>
