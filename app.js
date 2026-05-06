@@ -109,6 +109,7 @@ function syncPieceBar() {
   if (!state.selectedId) { bar.hidden = true; return; }
   const piece = state.pieces.find(p => p.id === state.selectedId);
   if (!piece) { bar.hidden = true; return; }
+  if (piece.locked) { bar.hidden = true; return; }
   bar.hidden = false;
   const pct = Math.round((piece.opacity ?? 1) * 100);
   slider.value = pct;
@@ -242,6 +243,7 @@ function addPieceFromImage(img, opts = {}) {
   piece.imageX = opts.imageX ?? 0;
   piece.imageY = opts.imageY ?? 0;
   piece.imageScale = opts.imageScale ?? 1;
+  piece.locked = !!opts.locked;
   state.pieces.push(piece);
   renderPiece(piece);
   selectPiece(piece.id);
@@ -259,6 +261,8 @@ function renderPiece(piece) {
     piecesG.appendChild(g);
   }
   g.style.display = piece.hidden ? 'none' : '';
+  g.classList.toggle('locked', !!piece.locked);
+  g.style.pointerEvents = piece.locked ? 'none' : '';
   g.setAttribute('transform', `translate(${piece.x + piece.w / 2} ${piece.y + piece.h / 2}) rotate(${piece.rot}) translate(${-piece.w / 2} ${-piece.h / 2})`);
 
   const cropping = isCroppingPiece(piece);
@@ -483,6 +487,7 @@ function renderLayerPanel() {
     li.className = 'layer-row';
     if (piece.id === state.selectedId) li.classList.add('selected');
     if (piece.hidden) li.classList.add('hidden');
+    if (piece.locked) li.classList.add('locked');
     li.dataset.id = piece.id;
     const thumb = document.createElement('div');
     thumb.className = 'layer-thumb';
@@ -491,16 +496,25 @@ function renderLayerPanel() {
     meta.className = 'layer-meta';
     meta.textContent = `${piece.sourceTag || 'piece'} · ${piece.id.replace('piece-', '#')}`;
     const eye = document.createElement('button');
-    eye.className = 'layer-eye';
+    eye.className = 'layer-action layer-eye';
     eye.textContent = piece.hidden ? '○' : '●';
     eye.title = piece.hidden ? 'show' : 'hide';
     eye.addEventListener('click', (e) => {
       e.stopPropagation();
       togglePieceHidden(piece.id);
     });
+    const lock = document.createElement('button');
+    lock.className = 'layer-action layer-lock';
+    lock.textContent = piece.locked ? 'locked' : 'lock';
+    lock.title = piece.locked ? 'unlock layer' : 'lock layer';
+    lock.addEventListener('click', (e) => {
+      e.stopPropagation();
+      togglePieceLocked(piece.id);
+    });
     li.appendChild(thumb);
     li.appendChild(meta);
     li.appendChild(eye);
+    li.appendChild(lock);
     li.addEventListener('pointerdown', (e) => onLayerRowPointerDown(e, piece.id));
     list.appendChild(li);
   }
@@ -536,9 +550,24 @@ function togglePieceHidden(id) {
   saveState();
 }
 
+function togglePieceLocked(id) {
+  const piece = state.pieces.find(p => p.id === id);
+  if (!piece) return;
+  pushHistory();
+  piece.locked = !piece.locked;
+  if (piece.locked && state.selectedId === id) {
+    setTool('select');
+    renderOverlay();
+    syncPieceBar();
+  }
+  renderPiece(piece);
+  renderLayerPanel();
+  saveState();
+}
+
 let layerDrag = null;
 function onLayerRowPointerDown(evt, id) {
-  if (evt.target.classList.contains('layer-eye')) return;
+  if (evt.target.classList.contains('layer-action')) return;
   layerDrag = {
     id,
     startY: evt.clientY,
@@ -634,6 +663,7 @@ function duplicatePiece(id) {
     imageX: orig.imageX ?? 0,
     imageY: orig.imageY ?? 0,
     imageScale: orig.imageScale ?? 1,
+    locked: false,
   };
   state.pieces.push(piece);
   renderPiece(piece);
@@ -668,6 +698,17 @@ function renderOverlay() {
   const g = document.createElementNS(SVG_NS, 'g');
   g.setAttribute('transform', `translate(${cx} ${cy}) rotate(${piece.rot})`);
   overlayG.appendChild(g);
+
+  if (piece.locked) {
+    const rect = document.createElementNS(SVG_NS, 'rect');
+    rect.setAttribute('x', -piece.w / 2);
+    rect.setAttribute('y', -piece.h / 2);
+    rect.setAttribute('width', piece.w);
+    rect.setAttribute('height', piece.h);
+    rect.classList.add('sel-rect', 'locked');
+    g.appendChild(rect);
+    return;
+  }
 
   if (isCroppingPiece(piece)) {
     renderCropHandles(g, piece);
@@ -1143,6 +1184,7 @@ surface.addEventListener('wheel', (evt) => {
   if (!state.selectedId) return;
   const piece = state.pieces.find(p => p.id === state.selectedId);
   if (!piece) return;
+  if (piece.locked) return;
   evt.preventDefault();
   const factor = Math.exp(-evt.deltaY * 0.0015);
   if (state.tool === 'adjust' && piece.lassoPath) {
@@ -1199,12 +1241,14 @@ window.addEventListener('keydown', (evt) => {
     return;
   }
   if ((evt.metaKey || evt.ctrlKey) && evt.key.toLowerCase() === 'd' && state.selectedId) {
-    duplicatePiece(state.selectedId);
+    const piece = state.pieces.find(p => p.id === state.selectedId);
+    if (piece && !piece.locked) duplicatePiece(state.selectedId);
     evt.preventDefault();
     return;
   }
   if ((evt.key === 'Delete' || evt.key === 'Backspace') && state.selectedId) {
-    deletePiece(state.selectedId);
+    const piece = state.pieces.find(p => p.id === state.selectedId);
+    if (piece && !piece.locked) deletePiece(state.selectedId);
     evt.preventDefault();
   }
   if (evt.key === 'Escape') {
@@ -1320,6 +1364,7 @@ function saveState() {
       imageY: p.imageY ?? 0,
       imageScale: p.imageScale ?? 1,
       hidden: !!p.hidden,
+      locked: !!p.locked,
     })),
     nextZ: state.nextZ,
     nextId: state.nextId,
@@ -1342,6 +1387,7 @@ function loadState() {
       imageY: p.imageY ?? 0,
       imageScale: p.imageScale ?? 1,
       hidden: !!p.hidden,
+      locked: !!p.locked,
     }));
     state.nextZ = data.nextZ || 1;
     state.nextId = data.nextId || (state.pieces.length + 1);

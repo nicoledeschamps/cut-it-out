@@ -243,6 +243,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
   border: 1px solid var(--line-soft);
 }
 .layer-row.hidden .layer-thumb { opacity: 0.35; filter: grayscale(0.6); }
+.layer-row.locked .layer-thumb { opacity: 0.65; }
+.layer-row.locked .layer-meta { color: var(--line); }
 .layer-meta {
   flex: 1; min-width: 0;
   font-family: var(--serif); font-style: italic; font-size: 12px;
@@ -250,13 +252,14 @@ button { font: inherit; color: inherit; cursor: pointer; }
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .layer-row.selected .layer-meta { color: var(--ink); }
-.layer-eye {
+.layer-action {
   background: none; border: 0; padding: 2px 4px;
   font-size: 11px; color: var(--ink-mid); cursor: pointer;
   font-family: var(--sans);
 }
-.layer-eye:hover { color: var(--ink); }
-.layer-row.hidden .layer-eye { color: var(--line); }
+.layer-action:hover { color: var(--ink); }
+.layer-row.hidden .layer-eye,
+.layer-row.locked .layer-lock { color: var(--line); }
 /* help button — circular, sits in actions group */
 .help-btn {
   width: 28px; height: 28px; padding: 0;
