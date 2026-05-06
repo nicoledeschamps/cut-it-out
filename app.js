@@ -28,6 +28,7 @@ const overlayG = document.getElementById('overlay');
 const thumbGrid = document.getElementById('thumb-grid');
 const moreBtn = document.getElementById('more-btn');
 const exportBtn = document.getElementById('export-btn');
+const exportSvgBtn = document.getElementById('export-svg-btn');
 const clearBtn = document.getElementById('clear-btn');
 const toolHint = document.getElementById('tool-hint');
 const GUIDE_KEY = 'cut-it-out-onboarded';
@@ -1359,12 +1360,10 @@ clearBtn.addEventListener('click', () => {
 
 // ---------- export ----------
 exportBtn.addEventListener('click', exportPNG);
+exportSvgBtn.addEventListener('click', exportSVG);
 
-async function exportPNG() {
-  exportBtn.textContent = 'exporting…';
-  exportBtn.disabled = true;
-  try {
-    selectPiece(null); // hide overlay
+async function buildExportSVG() {
+  selectPiece(null); // hide overlay
     const svgClone = surface.cloneNode(true);
     // strip overlay group
     svgClone.querySelector('#overlay')?.replaceChildren();
@@ -1376,7 +1375,43 @@ async function exportPNG() {
       im.setAttribute('href', dataUrl);
       im.removeAttribute('xlink:href');
     }
-    const xml = new XMLSerializer().serializeToString(svgClone);
+  return new XMLSerializer().serializeToString(svgClone);
+}
+
+function downloadBlob(blob, filename) {
+  const a = document.createElement('a');
+  a.download = filename;
+  a.href = URL.createObjectURL(blob);
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+function exportName(ext) {
+  return `collage-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.${ext}`;
+}
+
+async function exportSVG() {
+  exportSvgBtn.textContent = 'exporting…';
+  exportSvgBtn.disabled = true;
+  try {
+    const xml = await buildExportSVG();
+    const blob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' });
+    downloadBlob(blob, exportName('svg'));
+    exportSvgBtn.textContent = 'export svg';
+    exportSvgBtn.disabled = false;
+  } catch (e) {
+    console.error(e);
+    exportSvgBtn.textContent = 'export failed';
+    exportSvgBtn.disabled = false;
+    setTimeout(() => exportSvgBtn.textContent = 'export svg', 1500);
+  }
+}
+
+async function exportPNG() {
+  exportBtn.textContent = 'exporting…';
+  exportBtn.disabled = true;
+  try {
+    const xml = await buildExportSVG();
     const blob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const img = new Image();
@@ -1388,11 +1423,7 @@ async function exportPNG() {
       ctx.fillRect(0, 0, 1400, 900);
       ctx.drawImage(img, 0, 0);
       canvas.toBlob((png) => {
-        const a = document.createElement('a');
-        a.download = `collage-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.png`;
-        a.href = URL.createObjectURL(png);
-        a.click();
-        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        downloadBlob(png, exportName('png'));
       }, 'image/png');
       URL.revokeObjectURL(url);
       exportBtn.textContent = 'export png';

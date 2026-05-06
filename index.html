@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=Inter:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="app.css?v=20260506-3">
+  <link rel="stylesheet" href="app.css?v=20260506-4">
 </head>
 <body>
   <header class="topbar">
@@ -21,6 +21,7 @@
       <button id="help-btn" class="ghost help-btn" title="how to use">?</button>
       <button id="undo-btn" class="ghost" disabled title="undo (⌘Z)">undo</button>
       <button id="export-btn" class="ghost">export png</button>
+      <button id="export-svg-btn" class="ghost">export svg</button>
       <button id="clear-btn" class="ghost">clear</button>
     </div>
   </header>
@@ -34,7 +35,7 @@
         <li>click a thumbnail to add it to the page</li>
         <li>drag to move, scroll or corners to scale</li>
         <li>pick a cut tool, then click the edge you want to cut</li>
-        <li>hit <em>export png</em> when you're done</li>
+        <li>hit <em>export png</em> for a still, or <em>export svg</em> to preserve gifs</li>
       </ul>
       <p class="guide-shortcuts">⌘D duplicate · ⌘Z undo · drag layers panel to reorder</p>
       <button id="guide-start" class="guide-start">start</button>
@@ -168,6 +169,6 @@
     </aside>
   </main>
 
-  <script type="module" src="app.js?v=20260506-3"></script>
+  <script type="module" src="app.js?v=20260506-4"></script>
 </body>
 </html>
