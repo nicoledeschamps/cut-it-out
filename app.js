@@ -30,6 +30,41 @@ const moreBtn = document.getElementById('more-btn');
 const exportBtn = document.getElementById('export-btn');
 const clearBtn = document.getElementById('clear-btn');
 const toolHint = document.getElementById('tool-hint');
+const GUIDE_KEY = 'cut-it-out-onboarded';
+
+// Keep the guide usable even if a later boot step fails in a browser or saved state.
+function showGuide() {
+  const ov = document.getElementById('guide-overlay');
+  if (!ov) return;
+  ov.hidden = false;
+  ov.setAttribute('aria-hidden', 'false');
+}
+
+function hideGuide() {
+  const ov = document.getElementById('guide-overlay');
+  if (!ov) return;
+  ov.hidden = true;
+  ov.setAttribute('aria-hidden', 'true');
+  try { localStorage.setItem(GUIDE_KEY, '1'); } catch {}
+}
+
+function bindGuide() {
+  document.getElementById('guide-start')?.addEventListener('click', hideGuide);
+  document.getElementById('guide-close')?.addEventListener('click', hideGuide);
+  document.getElementById('help-btn')?.addEventListener('click', showGuide);
+  document.getElementById('guide-overlay')?.addEventListener('click', (e) => {
+    if (e.target.id === 'guide-overlay') hideGuide();
+  });
+  window.addEventListener('keydown', (evt) => {
+    const ov = document.getElementById('guide-overlay');
+    if (evt.key === 'Escape' && ov && !ov.hidden) {
+      hideGuide();
+      evt.preventDefault();
+    }
+  });
+}
+
+bindGuide();
 
 // ---------- coords ----------
 function svgPoint(evt) {
@@ -1370,35 +1405,6 @@ document.getElementById('layer-show-btn').addEventListener('click', () => {
   const panel = document.getElementById('layer-panel');
   delete panel.dataset.collapsed;
   renderLayerPanel();
-});
-
-// ---------- guide overlay ----------
-const GUIDE_KEY = 'cut-it-out-onboarded';
-function showGuide() {
-  const ov = document.getElementById('guide-overlay');
-  if (!ov) return;
-  ov.hidden = false;
-  ov.setAttribute('aria-hidden', 'false');
-}
-function hideGuide() {
-  const ov = document.getElementById('guide-overlay');
-  if (!ov) return;
-  ov.hidden = true;
-  ov.setAttribute('aria-hidden', 'true');
-  try { localStorage.setItem(GUIDE_KEY, '1'); } catch {}
-}
-document.getElementById('guide-start')?.addEventListener('click', hideGuide);
-document.getElementById('guide-close')?.addEventListener('click', hideGuide);
-document.getElementById('help-btn')?.addEventListener('click', showGuide);
-document.getElementById('guide-overlay')?.addEventListener('click', (e) => {
-  if (e.target.id === 'guide-overlay') hideGuide();
-});
-window.addEventListener('keydown', (evt) => {
-  const ov = document.getElementById('guide-overlay');
-  if (evt.key === 'Escape' && ov && !ov.hidden) {
-    hideGuide();
-    evt.preventDefault();
-  }
 });
 
 // ---------- boot ----------

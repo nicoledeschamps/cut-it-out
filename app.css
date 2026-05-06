@@ -262,6 +262,10 @@ button { font: inherit; color: inherit; cursor: pointer; }
 }
 
 /* guide overlay */
+.guide-overlay[hidden] {
+  display: none !important;
+}
+
 .guide-overlay {
   position: fixed; inset: 0;
   background: rgba(42, 36, 24, 0.32);
