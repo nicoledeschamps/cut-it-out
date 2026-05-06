@@ -1158,14 +1158,22 @@ async function loadSource(name, reset = true) {
 function renderThumbnails() {
   thumbGrid.innerHTML = '';
   const images = state.sourceData[state.source].images;
+  let visibleCount = images.length;
   for (const img of images) {
     const el = document.createElement('div');
     el.className = 'thumb';
     el.title = img.title;
     const im = document.createElement('img');
-    im.src = img.thumb;
     im.loading = 'lazy';
     im.alt = img.title || '';
+    im.onerror = () => {
+      el.remove();
+      visibleCount -= 1;
+      if (visibleCount === 0) {
+        thumbGrid.innerHTML = '<div class="thumb-loading">no live images found here</div>';
+      }
+    };
+    im.src = img.thumb;
     el.appendChild(im);
     el.addEventListener('click', () => {
       // measure natural ratio
@@ -1174,7 +1182,10 @@ function renderThumbnails() {
       probe.onload = () => {
         addPieceFromImage({ ...img, naturalRatio: probe.naturalWidth / probe.naturalHeight });
       };
-      probe.onerror = () => addPieceFromImage(img);
+      probe.onerror = () => {
+        el.remove();
+        visibleCount -= 1;
+      };
       probe.src = img.full;
     });
     thumbGrid.appendChild(el);
