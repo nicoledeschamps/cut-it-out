@@ -1,0 +1,560 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Personal Collage Tool Mockups</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      --tab-h: 54px;
+      color-scheme: dark light;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #101014;
+    }
+    button { font: inherit; }
+    .top-tabs {
+      position: fixed;
+      inset: 0 0 auto 0;
+      z-index: 50;
+      height: var(--tab-h);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px;
+      background: rgba(10, 9, 13, .82);
+      border-bottom: 1px solid rgba(255,255,255,.14);
+      backdrop-filter: blur(14px);
+    }
+    .tab-button {
+      height: 38px;
+      padding: 0 14px;
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.07);
+      color: rgba(255,255,255,.78);
+      cursor: pointer;
+      letter-spacing: 0;
+    }
+    .tab-button[aria-selected="true"] {
+      color: #fff;
+      border-color: #caa7ff;
+      background: rgba(139,69,232,.38);
+    }
+    .direction {
+      display: none;
+      min-height: 100vh;
+      padding-top: var(--tab-h);
+      overflow: hidden;
+    }
+    .direction.active { display: block; }
+    .mockup {
+      height: calc(100vh - var(--tab-h));
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(210px, 21vw) 1fr minmax(250px, 25vw);
+      gap: 18px;
+      padding: 22px;
+    }
+    .direction-label {
+      position: absolute;
+      z-index: 8;
+      pointer-events: none;
+    }
+    .tool-icon svg { width: 26px; height: 26px; display: block; }
+    .canvas {
+      position: relative;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .piece {
+      position: absolute;
+      width: var(--w);
+      height: var(--h);
+      transform: translate(var(--x), var(--y)) rotate(var(--r));
+      filter: drop-shadow(var(--shadow, 0 12px 16px rgba(0,0,0,.25)));
+    }
+    .piece img, .piece .fill {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      clip-path: url(#clip-clean);
+    }
+    .piece.clean img, .piece.clean .fill { clip-path: url(#clip-clean); }
+    .piece.wavy img, .piece.wavy .fill { clip-path: url(#clip-wavy); }
+    .piece.zig img, .piece.zig .fill { clip-path: url(#clip-zig); }
+    .piece.rough img, .piece.rough .fill { clip-path: url(#clip-rough); }
+    .piece.burn img, .piece.burn .fill { clip-path: url(#clip-burn); }
+    .piece.crop img, .piece.crop .fill { clip-path: url(#clip-crop); }
+    .piece.rgb::before, .piece.rgb::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: inherit;
+      clip-path: inherit;
+      opacity: .5;
+      mix-blend-mode: screen;
+      z-index: -1;
+    }
+    .thumb-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .thumb {
+      min-height: 68px;
+      background-size: cover;
+      background-position: center;
+    }
+    .tabs-mini { display: flex; gap: 6px; }
+
+    /* Direction 1 */
+    .analog {
+      color: #3f2a1c;
+      background:
+        linear-gradient(rgba(246,231,199,.88), rgba(246,231,199,.88)),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.74' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='.15'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='table' tableValues='0 .18'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      font-family: Caveat, "Patrick Hand", "Comic Sans MS", cursive;
+    }
+    .analog .mockup { grid-template-columns: 230px 1fr 285px; }
+    .analog .direction-label {
+      top: 72px; left: 30px;
+      font-size: clamp(30px, 4vw, 58px);
+      transform: rotate(-2deg);
+    }
+    .analog .toolbox {
+      align-self: end;
+      display: grid;
+      gap: 13px;
+      padding: 78px 16px 18px;
+    }
+    .analog .craft-tool {
+      height: 58px;
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      color: #412719;
+      background: #f5dfb0;
+      border: 2px solid #9f6e35;
+      box-shadow: 3px 4px 0 #9f6e35;
+      transform: rotate(var(--tilt));
+      font-size: 24px;
+    }
+    .analog .craft-tool:nth-child(2n) { background: #eacfa0; }
+    .analog .canvas {
+      margin-top: 38px;
+      border: 3px dashed rgba(116,78,38,.5);
+      background:
+        radial-gradient(circle at 18% 24%, rgba(160,116,62,.17), transparent 16%),
+        radial-gradient(circle at 78% 76%, rgba(88,54,24,.13), transparent 19%),
+        rgba(255,247,224,.48);
+      box-shadow: inset 0 0 0 9px rgba(255,255,255,.2);
+    }
+    .analog .piece { --shadow: 5px 14px 13px rgba(75,47,22,.28); }
+    .analog .source {
+      align-self: center;
+      min-height: 72%;
+      position: relative;
+      padding-top: 26px;
+    }
+    .analog .polaroid {
+      position: absolute;
+      width: 82%;
+      min-height: 180px;
+      left: var(--left);
+      top: var(--top);
+      padding: 12px 12px 42px;
+      background: #fff9ed;
+      box-shadow: 0 14px 24px rgba(75,47,22,.28);
+      transform: rotate(var(--rot));
+    }
+    .analog .polaroid h3 { margin: 0 0 8px; font-size: 27px; }
+    .analog .thumb { border: 3px solid #ead7b5; min-height: 76px; }
+
+    /* Direction 2 */
+    .punk {
+      color: #f7f7f7;
+      background:
+        radial-gradient(circle, rgba(255,255,255,.13) 1px, transparent 1px) 0 0 / 9px 9px,
+        linear-gradient(135deg, rgba(255,0,153,.18), transparent 32%),
+        linear-gradient(225deg, rgba(0,245,255,.16), transparent 36%),
+        #050505;
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+      text-transform: uppercase;
+    }
+    .punk .mockup { grid-template-columns: 250px 1fr 290px; gap: 14px; }
+    .punk .direction-label {
+      top: 76px; left: 28px;
+      font-family: Anton, "Bebas Neue", Impact, sans-serif;
+      font-size: clamp(38px, 5vw, 74px);
+      color: #fff;
+      text-shadow: -4px 0 #ff0099, 4px 0 #00f5ff, 0 5px #b8ff00;
+    }
+    .punk .toolbox, .punk .source {
+      margin-top: 86px;
+      border: 3px solid #fff;
+      background: repeating-linear-gradient(-6deg, #111 0 7px, #1b1b1b 7px 11px);
+      box-shadow: 7px 7px 0 #ff0099, -7px -7px 0 #00f5ff;
+      padding: 16px;
+    }
+    .punk .toolbox { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; align-content: start; }
+    .punk .craft-tool {
+      min-height: 86px;
+      display: grid;
+      place-items: center;
+      gap: 6px;
+      border: 2px solid #b8ff00;
+      background: #080808;
+      color: #fff;
+      font-size: 11px;
+      text-align: center;
+      box-shadow: inset -4px -4px 0 rgba(255,0,153,.35);
+    }
+    .punk .tool-icon svg { filter: drop-shadow(2px 0 #ff0099) drop-shadow(-2px 0 #00f5ff); }
+    .punk .canvas {
+      margin-top: 70px;
+      border: 4px solid #fff;
+      background:
+        linear-gradient(rgba(255,255,255,.06) 1px, transparent 1px) 0 0 / 100% 6px,
+        radial-gradient(circle at 35% 45%, rgba(184,255,0,.15), transparent 24%),
+        #0a0a0a;
+    }
+    .punk .piece { --shadow: 9px 12px 0 rgba(255,0,153,.65); }
+    .punk .piece.rgb img { filter: contrast(1.25) saturate(1.4); }
+    .punk .source h3 { margin: 0 0 14px; font-family: Anton, Impact, sans-serif; font-size: 34px; }
+    .punk .tabs-mini button {
+      flex: 1; border: 2px solid #fff; background: #ff0099; color: #050505; font-weight: 900;
+    }
+    .punk .tabs-mini button:nth-child(2) { background: #00f5ff; }
+    .punk .tabs-mini button:nth-child(3) { background: #b8ff00; }
+    .punk .thumb { border: 2px solid #fff; filter: grayscale(.55) contrast(1.45); }
+
+    /* Direction 3 */
+    .gallery {
+      background: #f7f5ef;
+      color: #111;
+      font-family: Inter, Helvetica, Arial, sans-serif;
+    }
+    .gallery .mockup { grid-template-columns: 76px 1fr 270px; gap: 32px; padding: 34px; }
+    .gallery .direction-label {
+      top: 80px; left: 126px;
+      font-family: Times, "Times New Roman", serif;
+      font-size: clamp(24px, 3vw, 44px);
+      font-weight: 400;
+    }
+    .gallery .toolbox {
+      margin-top: 82px;
+      border: 1px solid #111;
+      display: grid;
+      justify-items: center;
+      align-content: start;
+      gap: 22px;
+      padding: 18px 0;
+      background: #fbfaf6;
+    }
+    .gallery .craft-tool {
+      width: 42px;
+      height: 42px;
+      border: 1px solid #111;
+      background: transparent;
+      display: grid;
+      place-items: center;
+    }
+    .gallery .craft-tool span:not(.tool-icon) { display: none; }
+    .gallery .canvas {
+      margin-top: 80px;
+      border: 1px solid #111;
+      background: #fffdf8;
+    }
+    .gallery .piece { --shadow: 0 16px 24px rgba(0,0,0,.12); }
+    .gallery .source {
+      margin-top: 82px;
+      border-left: 1px solid #111;
+      padding-left: 22px;
+    }
+    .gallery .source h3 {
+      font-family: Times, "Times New Roman", serif;
+      font-weight: 400;
+      font-size: 28px;
+      margin: 0 0 22px;
+    }
+    .gallery .tabs-mini {
+      display: grid;
+      gap: 14px;
+      margin-bottom: 20px;
+      font-family: Times, "Times New Roman", serif;
+      font-size: 17px;
+    }
+    .gallery .tabs-mini button {
+      text-align: left;
+      border: 0;
+      border-bottom: 1px solid #111;
+      background: transparent;
+      padding: 0 0 8px;
+    }
+    .gallery .thumb-grid { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+    .gallery .thumb { border: 1px solid #111; min-height: 92px; filter: saturate(.8); }
+
+    /* Direction 4 */
+    .cosmic {
+      color: #efe9ff;
+      background:
+        radial-gradient(circle at 20% 12%, rgba(139,69,232,.34), transparent 28%),
+        radial-gradient(circle at 82% 72%, rgba(47,196,255,.18), transparent 26%),
+        linear-gradient(180deg, #171027, #070612);
+      font-family: VT323, "Press Start 2P", ui-monospace, monospace;
+    }
+    .cosmic .mockup { grid-template-columns: 245px 1fr 310px; gap: 20px; padding: 28px; }
+    .cosmic .direction-label {
+      top: 72px; left: 30px;
+      font-size: clamp(32px, 4vw, 62px);
+      color: #f4eeff;
+      text-shadow: 2px 2px 0 #8B45E8;
+    }
+    .os-window {
+      border: 2px solid #d9ccff;
+      background: #21173b;
+      box-shadow: 8px 8px 0 rgba(0,0,0,.55);
+    }
+    .os-title {
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #12081f;
+      border-bottom: 2px solid #d9ccff;
+      background: repeating-linear-gradient(180deg, #d9ccff 0 3px, #8B45E8 3px 5px);
+      font-size: 22px;
+    }
+    .cosmic .toolbox {
+      margin-top: 100px;
+      height: fit-content;
+      transform: translate(8px, 22px);
+    }
+    .cosmic .palette-body { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 14px; }
+    .cosmic .craft-tool {
+      min-height: 72px;
+      border: 2px solid #d9ccff;
+      background: #332257;
+      color: #fff;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      font-size: 18px;
+      box-shadow: inset 3px 3px 0 rgba(255,255,255,.18), inset -3px -3px 0 rgba(0,0,0,.35);
+    }
+    .cosmic .canvas {
+      margin-top: 72px;
+      border: 2px solid rgba(217,204,255,.42);
+      background:
+        linear-gradient(90deg, rgba(217,204,255,.08) 1px, transparent 1px),
+        linear-gradient(rgba(217,204,255,.08) 1px, transparent 1px),
+        #100a20;
+      background-size: 36px 36px;
+    }
+    .cosmic .piece { --shadow: 12px 15px 0 rgba(0,0,0,.45); }
+    .cosmic .source { margin-top: 86px; height: fit-content; }
+    .cosmic .finder-body { padding: 12px; }
+    .cosmic .tabs-mini button {
+      flex: 1;
+      border: 2px solid #d9ccff;
+      background: #12081f;
+      color: #f4eeff;
+      font-size: 18px;
+    }
+    .cosmic .tabs-mini button:first-child { background: #8B45E8; }
+    .cosmic .thumb {
+      border: 2px solid #d9ccff;
+      min-height: 78px;
+      image-rendering: auto;
+    }
+    .desktop-icons {
+      position: absolute;
+      right: 34%;
+      top: 92px;
+      display: flex;
+      gap: 12px;
+      color: #d9ccff;
+      font-size: 19px;
+    }
+    .desktop-icons span { border: 1px dotted #d9ccff; padding: 7px 9px; background: rgba(18,8,31,.7); }
+
+    .burn .fill { background: radial-gradient(circle at 40% 35%, #f9d48d, #9b4828 70%, #24100b); }
+    .abs1 { background: linear-gradient(135deg, #d9a441, #7421c9 45%, #111 46%, #00d5ff); }
+    .abs2 { background: radial-gradient(circle at 35% 32%, #f3f0df, transparent 20%), linear-gradient(110deg, #2b1738, #c55c3c, #f1c56b); }
+    .bot1 { background: linear-gradient(140deg, #1e5133, #c6d9a2 45%, #ebd3ac 46%, #5f3d28); }
+
+    @media (max-width: 900px) {
+      body { overflow: auto; }
+      .direction { min-height: auto; }
+      .mockup {
+        min-height: calc(100vh - var(--tab-h));
+        height: auto;
+        grid-template-columns: 1fr;
+        padding: 18px;
+        overflow: visible;
+      }
+      .direction-label { position: relative; inset: auto; grid-row: 1; }
+      .toolbox, .source, .canvas { margin-top: 0 !important; }
+      .canvas { min-height: 460px; }
+      .analog .source { min-height: 410px; }
+      .top-tabs { overflow-x: auto; }
+      .tab-button { white-space: nowrap; }
+      .gallery .mockup, .analog .mockup, .punk .mockup, .cosmic .mockup { grid-template-columns: 1fr; }
+      .gallery .toolbox { grid-template-columns: repeat(6, 42px); justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+  <svg width="0" height="0" aria-hidden="true" focusable="false">
+    <defs>
+      <clipPath id="clip-clean" clipPathUnits="objectBoundingBox"><path d="M.035,.045 L.965,.035 L.955,.95 L.045,.965 Z"/></clipPath>
+      <clipPath id="clip-wavy" clipPathUnits="objectBoundingBox"><path d="M.05,.08 C.16,.02 .24,.09 .35,.055 C.49,.01 .57,.075 .7,.045 C.83,.015 .91,.08 .96,.12 C.91,.25 .98,.36 .94,.48 C.89,.62 .97,.73 .92,.88 C.79,.91 .67,.96 .54,.93 C.39,.98 .27,.91 .12,.96 C.08,.83 .02,.72 .06,.58 C.01,.43 .09,.31 .05,.08 Z"/></clipPath>
+      <clipPath id="clip-zig" clipPathUnits="objectBoundingBox"><path d="M.04,.08 L.14,.03 L.21,.1 L.31,.035 L.39,.09 L.5,.03 L.59,.1 L.69,.04 L.78,.095 L.92,.045 L.96,.18 L.89,.27 L.96,.38 L.9,.49 L.97,.59 L.89,.69 L.96,.82 L.9,.94 L.75,.9 L.65,.97 L.55,.9 L.43,.97 L.32,.91 L.22,.97 L.1,.9 L.04,.95 L.09,.79 L.03,.69 L.1,.56 L.04,.45 L.1,.33 L.035,.22 Z"/></clipPath>
+      <clipPath id="clip-rough" clipPathUnits="objectBoundingBox"><path d="M.07,.05 C.12,.08 .16,.02 .22,.06 C.28,.1 .34,.02 .41,.06 C.49,.11 .55,.01 .62,.055 C.69,.1 .78,.02 .84,.08 C.92,.15 .95,.2 .91,.29 C.98,.36 .9,.44 .96,.52 C.89,.6 .98,.69 .9,.76 C.94,.86 .85,.91 .76,.89 C.68,.97 .58,.89 .48,.94 C.39,.9 .3,.98 .21,.91 C.13,.96 .07,.89 .09,.79 C.02,.72 .08,.64 .04,.56 C.11,.47 .02,.38 .08,.29 C.04,.2 .01,.11 .07,.05 Z"/></clipPath>
+      <clipPath id="clip-burn" clipPathUnits="objectBoundingBox"><path d="M.09,.1 C.19,.03 .31,.08 .39,.04 C.51,.11 .6,.02 .73,.07 C.88,.05 .93,.16 .89,.29 C.98,.43 .87,.52 .94,.64 C.9,.78 .82,.9 .68,.86 C.58,.97 .45,.88 .34,.93 C.2,.88 .08,.95 .1,.78 C.03,.66 .1,.56 .05,.45 C.12,.32 .02,.19 .09,.1 Z"/></clipPath>
+      <clipPath id="clip-crop" clipPathUnits="objectBoundingBox"><path d="M.02,.02 H.98 V.98 H.02 Z"/></clipPath>
+    </defs>
+  </svg>
+
+  <nav class="top-tabs" aria-label="Mockup directions">
+    <button class="tab-button" aria-selected="true" data-target="analog">Analog Craft Room</button>
+    <button class="tab-button" aria-selected="false" data-target="punk">Digital Glitch / Punk Zine</button>
+    <button class="tab-button" aria-selected="false" data-target="gallery">Minimalist Gallery</button>
+    <button class="tab-button" aria-selected="false" data-target="cosmic">Cosmic Desktop OS</button>
+  </nav>
+
+  <main>
+    <section id="analog" class="direction analog active">
+      <div class="mockup">
+        <h1 class="direction-label">Analog Craft Room</h1>
+        <aside class="toolbox" aria-label="Analog tools">
+          <button class="craft-tool" style="--tilt:-3deg"><span class="tool-icon">✂</span><span>clean cut</span></button>
+          <button class="craft-tool" style="--tilt:2deg"><span class="tool-icon">〰</span><span>wavy-deckle</span></button>
+          <button class="craft-tool" style="--tilt:-1deg"><span class="tool-icon">⌁</span><span>scissor zigzag</span></button>
+          <button class="craft-tool" style="--tilt:3deg"><span class="tool-icon">▰</span><span>rough tear</span></button>
+          <button class="craft-tool" style="--tilt:-2deg"><span class="tool-icon">☉</span><span>burnt edge</span></button>
+          <button class="craft-tool" style="--tilt:1deg"><span class="tool-icon">□</span><span>rectangle crop</span></button>
+        </aside>
+        <section class="canvas">
+          <div class="piece wavy" style="--w:30%;--h:38%;--x:12%;--y:12%;--r:-8deg"><img src="https://images.unsplash.com/photo-1485955900006-10f4d324d411?auto=format&fit=crop&w=900&q=80" alt=""></div>
+          <div class="piece rough" style="--w:28%;--h:33%;--x:48%;--y:10%;--r:7deg"><img src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=900&q=80" alt=""></div>
+          <div class="piece zig" style="--w:27%;--h:28%;--x:31%;--y:45%;--r:-4deg"><div class="fill abs2"></div></div>
+          <div class="piece burn" style="--w:24%;--h:35%;--x:66%;--y:43%;--r:10deg"><img src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=80" alt=""></div>
+        </section>
+        <aside class="source">
+          <div class="polaroid" style="--left:4%;--top:4%;--rot:-7deg"><h3>Are.na</h3><div class="thumb-grid"><div class="thumb" style="background-image:url('https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=300&q=70')"></div><div class="thumb bot1"></div><div class="thumb" style="background-image:url('https://images.unsplash.com/photo-1544441893-675973e31985?auto=format&fit=crop&w=300&q=70')"></div></div></div>
+          <div class="polaroid" style="--left:11%;--top:31%;--rot:5deg"><h3>Cosmos</h3><div class="thumb-grid"><div class="thumb abs1"></div><div class="thumb" style="background-image:url('https://images.unsplash.com/photo-1495567720989-cebdbdd97913?auto=format&fit=crop&w=300&q=70')"></div><div class="thumb abs2"></div></div></div>
+          <div class="polaroid" style="--left:0;--top:58%;--rot:-3deg"><h3>Pinterest</h3><div class="thumb-grid"><div class="thumb" style="background-image:url('https://images.unsplash.com/photo-1516762689617-e1cffcef479d?auto=format&fit=crop&w=300&q=70')"></div><div class="thumb" style="background-image:url('https://images.unsplash.com/photo-1504198453319-5ce911bafcde?auto=format&fit=crop&w=300&q=70')"></div><div class="thumb bot1"></div></div></div>
+        </aside>
+      </div>
+    </section>
+
+    <section id="punk" class="direction punk">
+      <div class="mockup">
+        <h1 class="direction-label">Digital Glitch / Punk Zine</h1>
+        <aside class="toolbox" aria-label="Punk tools">
+          <button class="craft-tool"><span class="tool-icon">▱</span><span>clean cut</span></button>
+          <button class="craft-tool"><span class="tool-icon">≋</span><span>wavy deckle</span></button>
+          <button class="craft-tool"><span class="tool-icon">╱╲</span><span>zigzag</span></button>
+          <button class="craft-tool"><span class="tool-icon">▓</span><span>rough tear</span></button>
+          <button class="craft-tool"><span class="tool-icon">◎</span><span>burnt edge</span></button>
+          <button class="craft-tool"><span class="tool-icon">▣</span><span>rectangle crop</span></button>
+        </aside>
+        <section class="canvas">
+          <div class="piece zig rgb" style="--w:34%;--h:42%;--x:8%;--y:9%;--r:-11deg"><img src="https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=900&q=80" alt=""></div>
+          <div class="piece rough rgb" style="--w:27%;--h:33%;--x:43%;--y:18%;--r:8deg"><div class="fill abs1"></div></div>
+          <div class="piece burn" style="--w:30%;--h:37%;--x:61%;--y:44%;--r:-5deg"><img src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=80" alt=""></div>
+          <div class="piece wavy rgb" style="--w:28%;--h:28%;--x:20%;--y:55%;--r:4deg"><img src="https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=900&q=80" alt=""></div>
+        </section>
+        <aside class="source">
+          <h3>signal feed</h3>
+          <div class="tabs-mini"><button>Are.na</button><button>Cosmos</button><button>Pinterest</button></div>
+          <div class="thumb-grid" style="margin-top:14px">
+            <div class="thumb abs1"></div><div class="thumb" style="background-image:url('https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=300&q=70')"></div><div class="thumb bot1"></div>
+            <div class="thumb" style="background-image:url('https://images.unsplash.com/photo-1544441893-675973e31985?auto=format&fit=crop&w=300&q=70')"></div><div class="thumb abs2"></div><div class="thumb" style="background-image:url('https://images.unsplash.com/photo-1516762689617-e1cffcef479d?auto=format&fit=crop&w=300&q=70')"></div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section id="gallery" class="direction gallery">
+      <div class="mockup">
+        <h1 class="direction-label">Minimalist Gallery</h1>
+        <aside class="toolbox" aria-label="Gallery tools">
+          <button class="craft-tool" title="clean cut"><span class="tool-icon">□</span><span>clean cut</span></button>
+          <button class="craft-tool" title="wavy-deckle"><span class="tool-icon">∿</span><span>wavy-deckle</span></button>
+          <button class="craft-tool" title="scissor zigzag"><span class="tool-icon">⌁</span><span>scissor zigzag</span></button>
+          <button class="craft-tool" title="rough tear"><span class="tool-icon">◒</span><span>rough tear</span></button>
+          <button class="craft-tool" title="burnt edge"><span class="tool-icon">◎</span><span>burnt edge</span></button>
+          <button class="craft-tool" title="rectangle crop"><span class="tool-icon">▭</span><span>rectangle crop</span></button>
+        </aside>
+        <section class="canvas">
+          <div class="piece clean" style="--w:26%;--h:42%;--x:14%;--y:15%;--r:0deg"><img src="https://images.unsplash.com/photo-1544441893-675973e31985?auto=format&fit=crop&w=900&q=80" alt=""></div>
+          <div class="piece crop" style="--w:24%;--h:27%;--x:48%;--y:12%;--r:0deg"><div class="fill bot1"></div></div>
+          <div class="piece clean" style="--w:25%;--h:32%;--x:58%;--y:53%;--r:0deg"><img src="https://images.unsplash.com/photo-1495567720989-cebdbdd97913?auto=format&fit=crop&w=900&q=80" alt=""></div>
+          <div class="piece rough" style="--w:22%;--h:24%;--x:27%;--y:61%;--r:-3deg"><div class="fill abs2"></div></div>
+        </section>
+        <aside class="source">
+          <h3>Sources</h3>
+          <div class="tabs-mini"><button>01 / arena</button><button>02 / cosmos</button><button>03 / pinterest</button></div>
+          <div class="thumb-grid">
+            <div class="thumb" style="background-image:url('https://images.unsplash.com/photo-1485955900006-10f4d324d411?auto=format&fit=crop&w=300&q=70')"></div><div class="thumb abs1"></div>
+            <div class="thumb" style="background-image:url('https://images.unsplash.com/photo-1516762689617-e1cffcef479d?auto=format&fit=crop&w=300&q=70')"></div><div class="thumb bot1"></div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section id="cosmic" class="direction cosmic">
+      <div class="mockup">
+        <h1 class="direction-label">Cosmic Desktop OS</h1>
+        <div class="desktop-icons"><span>collage.disk</span><span>scraps</span></div>
+        <aside class="toolbox os-window" aria-label="Cosmic tools">
+          <div class="os-title">TOOLS.PAL</div>
+          <div class="palette-body">
+            <button class="craft-tool"><span class="tool-icon">[ ]</span><span>clean</span></button>
+            <button class="craft-tool"><span class="tool-icon">~~~</span><span>wavy</span></button>
+            <button class="craft-tool"><span class="tool-icon">/\\/</span><span>zig</span></button>
+            <button class="craft-tool"><span class="tool-icon">###</span><span>tear</span></button>
+            <button class="craft-tool"><span class="tool-icon">( )</span><span>burn</span></button>
+            <button class="craft-tool"><span class="tool-icon">▭</span><span>crop</span></button>
+          </div>
+        </aside>
+        <section class="canvas">
+          <div class="piece crop" style="--w:31%;--h:37%;--x:9%;--y:16%;--r:-6deg"><img src="https://images.unsplash.com/photo-1495567720989-cebdbdd97913?auto=format&fit=crop&w=900&q=80" alt=""></div>
+          <div class="piece wavy" style="--w:27%;--h:29%;--x:42%;--y:12%;--r:5deg"><div class="fill abs1"></div></div>
+          <div class="piece rough" style="--w:25%;--h:38%;--x:62%;--y:38%;--r:-9deg"><img src="https://images.unsplash.com/photo-1504198453319-5ce911bafcde?auto=format&fit=crop&w=900&q=80" alt=""></div>
+          <div class="piece zig" style="--w:27%;--h:26%;--x:24%;--y:57%;--r:8deg"><img src="https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=900&q=80" alt=""></div>
+          <div class="piece burn" style="--w:19%;--h:23%;--x:73%;--y:13%;--r:4deg"><div class="fill abs2"></div></div>
+        </section>
+        <aside class="source os-window">
+          <div class="os-title">SOURCES.FINDER</div>
+          <div class="finder-body">
+            <div class="tabs-mini"><button>Are.na</button><button>Cosmos</button><button>Pinterest</button></div>
+            <div class="thumb-grid" style="margin-top:12px">
+              <div class="thumb abs1"></div><div class="thumb" style="background-image:url('https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=300&q=70')"></div><div class="thumb bot1"></div>
+              <div class="thumb" style="background-image:url('https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=300&q=70')"></div><div class="thumb abs2"></div><div class="thumb" style="background-image:url('https://images.unsplash.com/photo-1544441893-675973e31985?auto=format&fit=crop&w=300&q=70')"></div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const buttons = document.querySelectorAll(".tab-button");
+    const sections = document.querySelectorAll(".direction");
+    buttons.forEach((button) => {
+      button.addEventListener("click", () => {
+        buttons.forEach((b) => b.setAttribute("aria-selected", "false"));
+        sections.forEach((section) => section.classList.remove("active"));
+        button.setAttribute("aria-selected", "true");
+        document.getElementById(button.dataset.target).classList.add("active");
+      });
+    });
+  </script>
+</body>
+</html>
