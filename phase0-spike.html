@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Phase 0 — Are.na CORS + Export Spike</title>
+  <style>
+    body { font-family: ui-monospace, "JetBrains Mono", monospace; background: #f4ecdb; color: #2a2418; margin: 24px; }
+    h1 { font-family: "Cormorant Garamond", Georgia, serif; font-weight: 500; font-size: 28px; margin: 0 0 4px; }
+    p.sub { color: #6c5f48; margin: 0 0 24px; font-size: 13px; }
+    .controls { display: flex; gap: 8px; margin-bottom: 16px; }
+    button { background: #2a2418; color: #f4ecdb; border: 0; padding: 10px 16px; font-family: inherit; font-size: 12px; cursor: pointer; letter-spacing: 0.04em; }
+    button:hover { background: #4a3f2c; }
+    .verdict { padding: 12px; margin: 16px 0; border-left: 3px solid #c0b294; background: #ebe2c9; font-size: 13px; line-height: 1.5; white-space: pre-wrap; }
+    .verdict.pass { border-left-color: #2d6a3a; background: #e0ebd6; }
+    .verdict.fail { border-left-color: #8b2424; background: #f0d8d8; }
+    svg.canvas { width: 100%; height: 480px; background: #faf4e3; border: 1px solid #d6cab0; display: block; }
+    .label { font-size: 11px; color: #6c5f48; letter-spacing: 0.08em; text-transform: uppercase; margin: 24px 0 8px; }
+    img.exported { max-width: 100%; border: 1px solid #d6cab0; background: #faf4e3; display: block; margin-top: 8px; }
+    code { background: #ebe2c9; padding: 1px 4px; border-radius: 2px; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <h1>Phase 0 — Are.na CORS + SVG → PNG Export Spike</h1>
+  <p class="sub">Load 5 real Are.na images, clip them, export to PNG. Reports whether the canvas gets tainted.</p>
+
+  <div class="controls">
+    <button id="load">1. Load Are.na images</button>
+    <button id="export" disabled>2. Export to PNG</button>
+    <button id="taint-test" disabled>3. Test canvas taint</button>
+  </div>
+
+  <div id="verdict" class="verdict">Click "Load" to begin.</div>
+
+  <div class="label">SVG canvas (display)</div>
+  <svg id="surface" class="canvas" viewBox="0 0 1200 480" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <clipPath id="clip-clean" clipPathUnits="objectBoundingBox">
+        <rect x="0" y="0" width="1" height="1"/>
+      </clipPath>
+      <clipPath id="clip-wavy" clipPathUnits="objectBoundingBox">
+        <path d="M0,0.05 Q0.05,0 0.1,0.05 T0.2,0.05 T0.3,0.05 T0.4,0.05 T0.5,0.05 T0.6,0.05 T0.7,0.05 T0.8,0.05 T0.9,0.05 T1,0.05 L1,0.95 Q0.95,1 0.9,0.95 T0.8,0.95 T0.7,0.95 T0.6,0.95 T0.5,0.95 T0.4,0.95 T0.3,0.95 T0.2,0.95 T0.1,0.95 T0,0.95 Z"/>
+      </clipPath>
+    </defs>
+  </svg>
+
+  <div class="label">PNG export result</div>
+  <img id="exported" class="exported" alt="export will appear here" />
+
+<script>
+const CHANNEL = 'i-like-t58kvbzcjmu';
+const surface = document.getElementById('surface');
+const verdict = document.getElementById('verdict');
+const exportedImg = document.getElementById('exported');
+const btnLoad = document.getElementById('load');
+const btnExport = document.getElementById('export');
+const btnTaint = document.getElementById('taint-test');
+
+let loadedImages = [];
+
+function setVerdict(msg, kind) {
+  verdict.className = 'verdict' + (kind ? ' ' + kind : '');
+  verdict.textContent = msg;
+}
+
+async function loadArenaImages() {
+  setVerdict('Fetching Are.na channel...');
+  const res = await fetch(`https://api.are.na/v2/channels/${CHANNEL}/contents?per=10&direction=desc`);
+  const data = await res.json();
+  const candidates = (data.contents || [])
+    .map(b => b?.image?.large?.url || b?.image?.original?.url)
+    .filter(Boolean)
+    .slice(0, 5);
+
+  if (candidates.length < 3) {
+    setVerdict('Are.na returned fewer than 3 usable images. Aborting.', 'fail');
+    return;
+  }
+
+  setVerdict(`Got ${candidates.length} URLs. Loading with crossOrigin="anonymous"...`);
+
+  const positions = [
+    { x: 60,  y: 80,  w: 220, h: 220, clip: 'clip-clean', rot: -3 },
+    { x: 320, y: 60,  w: 240, h: 240, clip: 'clip-wavy',  rot: 2 },
+    { x: 600, y: 110, w: 200, h: 220, clip: 'clip-clean', rot: -1 },
+    { x: 840, y: 70,  w: 220, h: 240, clip: 'clip-wavy',  rot: 4 },
+    { x: 200, y: 280, w: 280, h: 180, clip: 'clip-clean', rot: -2 },
+  ];
+
+  loadedImages = [];
+  for (let i = 0; i < candidates.length; i++) {
+    const url = candidates[i];
+    const pos = positions[i % positions.length];
+    const ok = await loadOne(url, pos);
+    loadedImages.push({ url, ok, pos });
+  }
+
+  const allOk = loadedImages.every(r => r.ok);
+  setVerdict(
+    `Loaded ${loadedImages.filter(r=>r.ok).length}/${loadedImages.length} images.\n` +
+    loadedImages.map((r,i) => `  ${i+1}. ${r.ok ? 'OK' : 'FAIL'}  ${r.url.slice(0,80)}...`).join('\n'),
+    allOk ? 'pass' : 'fail'
+  );
+  btnExport.disabled = !allOk;
+  btnTaint.disabled = !allOk;
+}
+
+function loadOne(url, pos) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      g.setAttribute('transform', `translate(${pos.x + pos.w/2},${pos.y + pos.h/2}) rotate(${pos.rot}) translate(${-pos.w/2},${-pos.h/2})`);
+      const svgImg = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+      svgImg.setAttribute('href', url);
+      svgImg.setAttribute('width', pos.w);
+      svgImg.setAttribute('height', pos.h);
+      svgImg.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+      svgImg.setAttribute('clip-path', `url(#${pos.clip})`);
+      g.appendChild(svgImg);
+      surface.appendChild(g);
+      resolve(true);
+    };
+    img.onerror = () => resolve(false);
+    img.src = url;
+  });
+}
+
+// Test 1: render via SVG-blob method (most CORS-fragile)
+async function exportPNG() {
+  setVerdict('Serializing SVG → PNG...');
+  try {
+    // Inline images: fetch each image, convert to data URL, replace href
+    const svgClone = surface.cloneNode(true);
+    const images = svgClone.querySelectorAll('image');
+    for (const im of images) {
+      const href = im.getAttribute('href') || im.getAttribute('xlink:href');
+      try {
+        const resp = await fetch(href, { mode: 'cors' });
+        const blob = await resp.blob();
+        const dataUrl = await new Promise((res) => {
+          const r = new FileReader();
+          r.onload = () => res(r.result);
+          r.readAsDataURL(blob);
+        });
+        im.setAttribute('href', dataUrl);
+        im.removeAttribute('xlink:href');
+      } catch (e) {
+        setVerdict('Fetch-to-data-URL failed for one image: ' + e.message, 'fail');
+        return;
+      }
+    }
+
+    const xml = new XMLSerializer().serializeToString(svgClone);
+    const svgBlob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' });
+    const svgUrl = URL.createObjectURL(svgBlob);
+
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1200;
+      canvas.height = 480;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#faf4e3';
+      ctx.fillRect(0, 0, 1200, 480);
+      ctx.drawImage(img, 0, 0);
+      try {
+        const dataUrl = canvas.toDataURL('image/png');
+        exportedImg.src = dataUrl;
+        setVerdict('PNG export SUCCESS — canvas not tainted, data URL produced (' + Math.round(dataUrl.length / 1024) + ' KB).', 'pass');
+      } catch (e) {
+        setVerdict('PNG export FAILED — canvas tainted: ' + e.message, 'fail');
+      }
+      URL.revokeObjectURL(svgUrl);
+    };
+    img.onerror = (e) => setVerdict('SVG → Image conversion failed', 'fail');
+    img.src = svgUrl;
+  } catch (e) {
+    setVerdict('Export error: ' + e.message, 'fail');
+  }
+}
+
+// Test 2: cleaner taint test — direct drawImage of one Are.na URL
+async function taintTest() {
+  setVerdict('Testing direct drawImage taint with first Are.na URL...');
+  const url = loadedImages[0]?.url;
+  if (!url) return;
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 200; canvas.height = 200;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, 200, 200);
+    try {
+      ctx.getImageData(0, 0, 1, 1);
+      setVerdict('Direct drawImage taint test PASSED — canvas readable, getImageData works.', 'pass');
+    } catch (e) {
+      setVerdict('Direct drawImage taint test FAILED — ' + e.message, 'fail');
+    }
+  };
+  img.onerror = () => setVerdict('Direct image load failed', 'fail');
+  img.src = url;
+}
+
+btnLoad.addEventListener('click', loadArenaImages);
+btnExport.addEventListener('click', exportPNG);
+btnTaint.addEventListener('click', taintTest);
+</script>
+</body>
+</html>

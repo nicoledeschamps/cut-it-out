@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Collage / Draft 01</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      --paper: #f4ecdb;
+      --paper-deep: #e9ddc5;
+      --ink: #171511;
+      --muted: #756a58;
+      --grid: rgba(214, 202, 176, .56);
+      --hairline: rgba(23, 21, 17, .88);
+      --rail: #f8f1e4;
+      --serif: "Cormorant Garamond", "Lora", Georgia, serif;
+      --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--sans);
+      overflow: hidden;
+    }
+
+    body {
+      background:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cfilter id='paper'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.78' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='.7 0 0 0 .2 0 .58 0 0 .18 0 0 .38 0 .1 0 0 0 .22 0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23paper)' opacity='.28'/%3E%3C/svg%3E"),
+        linear-gradient(180deg, #f7efdf, var(--paper));
+    }
+
+    button,
+    a { font: inherit; }
+
+    .app {
+      height: 100vh;
+      display: grid;
+      grid-template-rows: 46px 1fr;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 0 22px;
+      border-bottom: 1px solid var(--hairline);
+      background:
+        linear-gradient(rgba(248, 241, 228, .86), rgba(248, 241, 228, .86)),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.7' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.16'/%3E%3C/svg%3E");
+    }
+
+    .project-label {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: 15px;
+      font-weight: 400;
+      letter-spacing: .035em;
+      white-space: nowrap;
+    }
+
+    .sources {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      min-width: 0;
+      font-family: var(--serif);
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .sources a {
+      color: inherit;
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      line-height: 1.25;
+    }
+
+    .sources a[aria-current="page"] {
+      color: var(--ink);
+      border-color: currentColor;
+    }
+
+    .workspace {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: 80px minmax(0, 1fr) 240px;
+      background: rgba(244, 236, 219, .86);
+    }
+
+    .left-rail {
+      border-right: 1px solid var(--hairline);
+      background: rgba(248, 241, 228, .74);
+      display: grid;
+      align-content: start;
+      justify-items: stretch;
+      padding: 16px 9px;
+      gap: 10px;
+    }
+
+    .tool {
+      min-width: 0;
+      height: 78px;
+      padding: 8px 2px 6px;
+      border: 0;
+      border-bottom: 1px solid rgba(23, 21, 17, .3);
+      background: transparent;
+      color: var(--ink);
+      display: grid;
+      justify-items: center;
+      align-content: center;
+      gap: 5px;
+      cursor: default;
+    }
+
+    .tool svg {
+      width: 24px;
+      height: 24px;
+      display: block;
+      overflow: visible;
+    }
+
+    .tool path,
+    .tool rect,
+    .tool circle,
+    .tool line,
+    .tool polyline {
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.35;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .tool span {
+      width: 100%;
+      font-family: var(--serif);
+      font-size: 11px;
+      line-height: 1.05;
+      text-align: center;
+      overflow-wrap: anywhere;
+    }
+
+    .stage {
+      min-width: 0;
+      min-height: 0;
+      padding: 26px 30px 28px;
+    }
+
+    .canvas {
+      position: relative;
+      height: 100%;
+      min-height: 520px;
+      overflow: hidden;
+      border: 1px solid var(--hairline);
+      background:
+        linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0 / 40px 40px,
+        linear-gradient(var(--grid) 1px, transparent 1px) 0 0 / 40px 40px,
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.66' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='.72 0 0 0 .23 0 .62 0 0 .18 0 0 .42 0 .1 0 0 0 .2 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)' opacity='.22'/%3E%3C/svg%3E"),
+        var(--paper);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .24);
+    }
+
+    .canvas::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(90deg, rgba(23, 21, 17, .05) 1px, transparent 1px) 0 0 / 160px 160px,
+        linear-gradient(rgba(23, 21, 17, .05) 1px, transparent 1px) 0 0 / 160px 160px;
+      mix-blend-mode: multiply;
+    }
+
+    .canvas-note {
+      position: absolute;
+      left: 24px;
+      bottom: 18px;
+      z-index: 3;
+      font-family: var(--serif);
+      font-size: 13px;
+      color: rgba(23, 21, 17, .55);
+      letter-spacing: .03em;
+    }
+
+    .piece {
+      position: absolute;
+      width: var(--w);
+      aspect-ratio: var(--ratio);
+      left: var(--x);
+      top: var(--y);
+      z-index: var(--z);
+      transform: rotate(var(--r));
+      filter: drop-shadow(0 14px 18px rgba(71, 55, 30, .18));
+      overflow: visible;
+    }
+
+    .piece svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+      overflow: visible;
+    }
+
+    .piece image {
+      width: 100%;
+      height: 100%;
+    }
+
+    .piece .edge-shadow {
+      fill: none;
+      stroke: rgba(74, 53, 29, .45);
+      stroke-width: 11;
+      filter: url(#softCutShadow);
+      opacity: .48;
+    }
+
+    .piece .edge-line {
+      fill: none;
+      stroke: rgba(42, 32, 19, .38);
+      stroke-width: 1.7;
+      opacity: .62;
+    }
+
+    .piece.tear .edge-line {
+      stroke: rgba(65, 48, 28, .34);
+      stroke-width: 2.25;
+      stroke-dasharray: 2 5;
+    }
+
+    .piece.burnt .edge-shadow {
+      stroke: rgba(56, 27, 12, .58);
+      stroke-width: 15;
+      opacity: .62;
+    }
+
+    .piece.burnt .edge-line {
+      stroke: rgba(72, 30, 12, .74);
+      stroke-width: 3.1;
+    }
+
+    .right-rail {
+      min-height: 0;
+      border-left: 1px solid var(--hairline);
+      background: rgba(248, 241, 228, .62);
+      padding: 24px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .rail-caption {
+      margin: 0 0 2px;
+      font-family: var(--serif);
+      font-weight: 400;
+      font-size: 15px;
+      letter-spacing: .04em;
+    }
+
+    .thumb-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .thumb {
+      height: 92px;
+      border: 1px solid rgba(23, 21, 17, .86);
+      background-size: cover;
+      background-position: center;
+      filter: saturate(.84) contrast(.96);
+    }
+
+    .load-more {
+      margin-top: 2px;
+      font-family: var(--serif);
+      font-size: 14px;
+      font-style: italic;
+      color: var(--muted);
+      text-decoration: none;
+      width: fit-content;
+      border-bottom: 1px solid rgba(117, 106, 88, .5);
+    }
+
+    @media (max-width: 920px) {
+      html,
+      body { overflow: auto; }
+
+      .app {
+        min-height: 100vh;
+        height: auto;
+      }
+
+      .topbar {
+        padding: 0 14px;
+      }
+
+      .sources {
+        gap: 10px;
+        font-size: 13px;
+      }
+
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+
+      .left-rail {
+        grid-template-columns: repeat(6, minmax(48px, 1fr));
+        border-right: 0;
+        border-bottom: 1px solid var(--hairline);
+        padding: 8px;
+      }
+
+      .tool {
+        height: 62px;
+        border-bottom: 0;
+      }
+
+      .tool span { font-size: 10px; }
+
+      .stage {
+        padding: 14px;
+      }
+
+      .canvas {
+        height: min(82vh, 640px);
+        min-height: 500px;
+      }
+
+      .right-rail {
+        border-left: 0;
+        border-top: 1px solid var(--hairline);
+      }
+
+      .thumb-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 620px) {
+      .topbar {
+        height: auto;
+        min-height: 54px;
+        align-items: flex-start;
+        flex-direction: column;
+        justify-content: center;
+        gap: 5px;
+        padding-block: 9px;
+      }
+
+      .sources {
+        flex-wrap: wrap;
+      }
+
+      .left-rail {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .canvas {
+        min-height: 560px;
+        background-size: 32px 32px, 32px 32px, auto, auto;
+      }
+
+      .piece {
+        width: calc(var(--w) * 1.22);
+      }
+
+      .thumb-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+  </style>
+</head>
+<body>
+  <svg width="0" height="0" aria-hidden="true" focusable="false">
+    <defs>
+      <filter id="softCutShadow" x="-12%" y="-12%" width="124%" height="124%">
+        <feGaussianBlur stdDeviation="2.1"></feGaussianBlur>
+      </filter>
+
+      <clipPath id="cleanCut" clipPathUnits="objectBoundingBox">
+        <path d="M.035 .04 L.965 .035 L.958 .962 L.042 .958 Z"></path>
+      </clipPath>
+
+      <clipPath id="wavyCut" clipPathUnits="objectBoundingBox">
+        <path d="M.049 .106 C.137 .035 .225 .075 .328 .052 C.456 .023 .547 .082 .66 .048 C.77 .016 .884 .055 .951 .126 C.913 .244 .981 .341 .94 .471 C.902 .592 .974 .694 .921 .858 C.81 .938 .691 .903 .566 .945 C.432 .991 .319 .923 .205 .954 C.102 .982 .045 .897 .077 .784 C.018 .673 .072 .572 .039 .451 C.006 .329 .089 .237 .049 .106 Z"></path>
+      </clipPath>
+
+      <clipPath id="zigCut" clipPathUnits="objectBoundingBox">
+        <path d="M.045 .095 L.115 .032 L.185 .104 L.257 .038 L.326 .105 L.404 .034 L.475 .106 L.553 .035 L.625 .104 L.7 .034 L.77 .103 L.928 .041 L.954 .18 L.889 .245 L.961 .315 L.895 .384 L.967 .455 L.897 .527 L.961 .602 L.888 .676 L.958 .757 L.902 .944 L.76 .891 L.688 .965 L.612 .895 L.534 .965 L.459 .895 L.382 .965 L.305 .894 L.231 .963 L.151 .889 L.052 .952 L.099 .803 L.032 .731 L.104 .654 L.035 .579 L.105 .504 L.035 .426 L.104 .35 L.035 .271 Z"></path>
+      </clipPath>
+
+      <clipPath id="tornCut" clipPathUnits="objectBoundingBox">
+        <path d="M.071 .058 L.101 .081 L.128 .047 L.158 .092 L.19 .052 L.227 .073 L.266 .039 L.302 .087 L.337 .055 L.372 .081 L.407 .041 L.444 .084 L.482 .05 L.519 .075 L.558 .035 L.596 .084 L.635 .048 L.671 .079 L.708 .041 L.747 .09 L.786 .052 L.823 .086 L.873 .062 L.931 .122 L.907 .169 L.95 .213 L.912 .259 L.966 .31 L.915 .355 L.952 .405 L.91 .455 L.966 .509 L.912 .557 L.95 .609 L.901 .657 L.943 .711 L.892 .751 L.921 .82 L.86 .882 L.807 .858 L.764 .927 L.708 .878 L.658 .94 L.603 .888 L.552 .938 L.498 .884 L.445 .946 L.394 .891 L.338 .939 L.289 .883 L.23 .93 L.184 .873 L.123 .908 L.074 .842 L.096 .783 L.045 .734 L.085 .68 L.035 .625 L.079 .568 L.029 .513 L.081 .456 L.036 .398 L.091 .339 L.041 .281 L.087 .222 L.05 .158 Z"></path>
+      </clipPath>
+
+      <clipPath id="burntCut" clipPathUnits="objectBoundingBox">
+        <path d="M.084 .103 C.17 .036 .256 .092 .337 .051 C.446 .105 .533 .026 .63 .069 C.737 .022 .885 .062 .919 .159 C.88 .245 .965 .299 .93 .39 C.985 .49 .896 .556 .94 .648 C.898 .781 .821 .899 .69 .866 C.603 .956 .486 .872 .383 .928 C.267 .879 .12 .943 .102 .791 C.036 .699 .105 .608 .056 .5 C.127 .397 .019 .241 .084 .103 Z"></path>
+      </clipPath>
+    </defs>
+  </svg>
+
+  <div class="app">
+    <header class="topbar">
+      <p class="project-label">collage / draft 01</p>
+      <nav class="sources" aria-label="Source picker">
+        <a href="#" aria-current="page">Are.na</a>
+        <span aria-hidden="true">&middot;</span>
+        <a href="#">Cosmos</a>
+        <span aria-hidden="true">&middot;</span>
+        <a href="#">Pinterest</a>
+      </nav>
+    </header>
+
+    <main class="workspace">
+      <aside class="left-rail" aria-label="Cut tools">
+        <button class="tool" aria-label="clean cut">
+          <svg viewBox="0 0 28 28" aria-hidden="true"><rect x="6" y="6" width="16" height="16"></rect><line x1="4" y1="22" x2="24" y2="22"></line></svg>
+          <span>i. clean cut</span>
+        </button>
+        <button class="tool" aria-label="wavy">
+          <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M4 15c3.3-4.2 6.5 4.2 9.8 0s6.8 4.1 10.2-.1"></path><path d="M5 8c4-2.2 7.8 1.4 11.7-.8 2.4-1.3 4.4-.9 6.3.5"></path></svg>
+          <span>ii. wavy</span>
+        </button>
+        <button class="tool" aria-label="zigzag">
+          <svg viewBox="0 0 28 28" aria-hidden="true"><polyline points="4,19 7,9 11,19 15,9 19,19 23,9"></polyline><line x1="5" y1="23" x2="23" y2="23"></line></svg>
+          <span>iii. zigzag</span>
+        </button>
+        <button class="tool" aria-label="tear">
+          <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M8 4c-1.4 3.2 2.8 4.1 1.1 7.5-1.5 3.1 2.9 4.1 1.2 7.4-.7 1.4-.2 3.4 1.7 5.1"></path><path d="M17 5c2.7 1.6 3.8 4 2.8 6.4-.8 2 1.1 3.6 2 5.4.9 1.9.3 4-1.5 6.1"></path></svg>
+          <span>iv. tear</span>
+        </button>
+        <button class="tool" aria-label="burnt">
+          <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M14 4c4.7 3.9 7.2 7.4 7.2 11.1A7.2 7.2 0 1 1 6.8 15.1C6.8 11.8 9.4 8 14 4Z"></path><path d="M13.9 12.2c1.9 1.7 2.8 3.1 2.8 4.7a2.8 2.8 0 1 1-5.6 0c0-1.3.9-2.9 2.8-4.7Z"></path></svg>
+          <span>v. burnt</span>
+        </button>
+        <button class="tool" aria-label="crop">
+          <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M8 4v16h16"></path><path d="M4 8h16v16"></path></svg>
+          <span>vi. crop</span>
+        </button>
+      </aside>
+
+      <section class="stage" aria-label="Collage canvas">
+        <div class="canvas">
+          <div class="canvas-note">paper grid / 40px</div>
+
+          <div class="piece clean" style="--w: 28%; --ratio: 4 / 5; --x: 14%; --y: 12%; --r: -1.8deg; --z: 2;">
+            <svg viewBox="0 0 1000 1250" role="img" aria-label="Clean cut botanical image">
+              <image href="https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&amp;fit=crop&amp;w=1100&amp;q=82" x="0" y="0" width="1000" height="1250" preserveAspectRatio="xMidYMid slice" clip-path="url(#cleanCut)"></image>
+              <path class="edge-shadow" d="M35 50 L965 44 L958 1202 L42 1198 Z"></path>
+              <path class="edge-line" d="M35 50 L965 44 L958 1202 L42 1198 Z"></path>
+            </svg>
+          </div>
+
+          <div class="piece wavy" style="--w: 31%; --ratio: 5 / 4; --x: 42%; --y: 13%; --r: 2.2deg; --z: 4;">
+            <svg viewBox="0 0 1250 1000" role="img" aria-label="Wavy cut vintage editorial image">
+              <image href="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&amp;fit=crop&amp;w=1200&amp;q=82" x="0" y="0" width="1250" height="1000" preserveAspectRatio="xMidYMid slice" clip-path="url(#wavyCut)"></image>
+              <path class="edge-shadow" d="M61 106 C171 35 281 75 410 52 C570 23 684 82 825 48 C963 16 1105 55 1189 126 C1141 244 1226 341 1175 471 C1128 592 1218 694 1151 858 C1012 938 864 903 708 945 C540 991 399 923 256 954 C128 982 56 897 96 784 C23 673 90 572 49 451 C8 329 111 237 61 106 Z"></path>
+              <path class="edge-line" d="M61 106 C171 35 281 75 410 52 C570 23 684 82 825 48 C963 16 1105 55 1189 126 C1141 244 1226 341 1175 471 C1128 592 1218 694 1151 858 C1012 938 864 903 708 945 C540 991 399 923 256 954 C128 982 56 897 96 784 C23 673 90 572 49 451 C8 329 111 237 61 106 Z"></path>
+            </svg>
+          </div>
+
+          <div class="piece tear" style="--w: 27%; --ratio: 1 / 1; --x: 30%; --y: 42%; --r: -.8deg; --z: 5;">
+            <svg viewBox="0 0 1000 1000" role="img" aria-label="Rough torn abstract textile image">
+              <image href="https://images.unsplash.com/photo-1495567720989-cebdbdd97913?auto=format&amp;fit=crop&amp;w=1000&amp;q=82" x="0" y="0" width="1000" height="1000" preserveAspectRatio="xMidYMid slice" clip-path="url(#tornCut)"></image>
+              <path class="edge-shadow" d="M71 58 L101 81 L128 47 L158 92 L190 52 L227 73 L266 39 L302 87 L337 55 L372 81 L407 41 L444 84 L482 50 L519 75 L558 35 L596 84 L635 48 L671 79 L708 41 L747 90 L786 52 L823 86 L873 62 L931 122 L907 169 L950 213 L912 259 L966 310 L915 355 L952 405 L910 455 L966 509 L912 557 L950 609 L901 657 L943 711 L892 751 L921 820 L860 882 L807 858 L764 927 L708 878 L658 940 L603 888 L552 938 L498 884 L445 946 L394 891 L338 939 L289 883 L230 930 L184 873 L123 908 L74 842 L96 783 L45 734 L85 680 L35 625 L79 568 L29 513 L81 456 L36 398 L91 339 L41 281 L87 222 L50 158 Z"></path>
+              <path class="edge-line" d="M71 58 L101 81 L128 47 L158 92 L190 52 L227 73 L266 39 L302 87 L337 55 L372 81 L407 41 L444 84 L482 50 L519 75 L558 35 L596 84 L635 48 L671 79 L708 41 L747 90 L786 52 L823 86 L873 62 L931 122 L907 169 L950 213 L912 259 L966 310 L915 355 L952 405 L910 455 L966 509 L912 557 L950 609 L901 657 L943 711 L892 751 L921 820 L860 882 L807 858 L764 927 L708 878 L658 940 L603 888 L552 938 L498 884 L445 946 L394 891 L338 939 L289 883 L230 930 L184 873 L123 908 L74 842 L96 783 L45 734 L85 680 L35 625 L79 568 L29 513 L81 456 L36 398 L91 339 L41 281 L87 222 L50 158 Z"></path>
+            </svg>
+          </div>
+
+          <div class="piece zig" style="--w: 24%; --ratio: 5 / 4; --x: 60%; --y: 48%; --r: 1.6deg; --z: 3;">
+            <svg viewBox="0 0 1250 1000" role="img" aria-label="Zigzag cut fashion image">
+              <image href="https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&amp;fit=crop&amp;w=1100&amp;q=82" x="0" y="0" width="1250" height="1000" preserveAspectRatio="xMidYMid slice" clip-path="url(#zigCut)"></image>
+              <path class="edge-shadow" d="M56 95 L144 32 L231 104 L321 38 L408 105 L505 34 L594 106 L691 35 L781 104 L875 34 L963 103 L1160 41 L1193 180 L1111 245 L1201 315 L1119 384 L1209 455 L1121 527 L1201 602 L1110 676 L1198 757 L1128 944 L950 891 L860 965 L765 895 L668 965 L574 895 L478 965 L381 894 L289 963 L189 889 L65 952 L124 803 L40 731 L130 654 L44 579 L131 504 L44 426 L130 350 L44 271 Z"></path>
+              <path class="edge-line" d="M56 95 L144 32 L231 104 L321 38 L408 105 L505 34 L594 106 L691 35 L781 104 L875 34 L963 103 L1160 41 L1193 180 L1111 245 L1201 315 L1119 384 L1209 455 L1121 527 L1201 602 L1110 676 L1198 757 L1128 944 L950 891 L860 965 L765 895 L668 965 L574 895 L478 965 L381 894 L289 963 L189 889 L65 952 L124 803 L40 731 L130 654 L44 579 L131 504 L44 426 L130 350 L44 271 Z"></path>
+            </svg>
+          </div>
+
+          <div class="piece burnt" style="--w: 18%; --ratio: 1 / 1.18; --x: 19%; --y: 62%; --r: -2.7deg; --z: 1;">
+            <svg viewBox="0 0 1000 1180" role="img" aria-label="Burnt edge landscape fragment">
+              <image href="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&amp;fit=crop&amp;w=1000&amp;q=82" x="0" y="0" width="1000" height="1180" preserveAspectRatio="xMidYMid slice" clip-path="url(#burntCut)"></image>
+              <path class="edge-shadow" d="M84 122 C170 42 256 109 337 60 C446 124 533 31 630 81 C737 26 885 73 919 188 C880 289 965 353 930 460 C985 578 896 656 940 765 C898 922 821 1061 690 1022 C603 1128 486 1029 383 1095 C267 1037 120 1113 102 933 C36 825 105 717 56 590 C127 468 19 284 84 122 Z"></path>
+              <path class="edge-line" d="M84 122 C170 42 256 109 337 60 C446 124 533 31 630 81 C737 26 885 73 919 188 C880 289 965 353 930 460 C985 578 896 656 940 765 C898 922 821 1061 690 1022 C603 1128 486 1029 383 1095 C267 1037 120 1113 102 933 C36 825 105 717 56 590 C127 468 19 284 84 122 Z"></path>
+            </svg>
+          </div>
+        </div>
+      </section>
+
+      <aside class="right-rail" aria-label="Source thumbnails">
+        <h2 class="rail-caption">from / are.na</h2>
+        <div class="thumb-grid">
+          <div class="thumb" style="background-image: url('https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=360&q=74');"></div>
+          <div class="thumb" style="background-image: url('https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=360&q=74');"></div>
+          <div class="thumb" style="background-image: url('https://images.unsplash.com/photo-1495567720989-cebdbdd97913?auto=format&fit=crop&w=360&q=74');"></div>
+          <div class="thumb" style="background-image: url('https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=360&q=74');"></div>
+          <div class="thumb" style="background-image: url('https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=360&q=74');"></div>
+          <div class="thumb" style="background-image: url('https://images.unsplash.com/photo-1544441893-675973e31985?auto=format&fit=crop&w=360&q=74');"></div>
+          <div class="thumb" style="background-image: url('https://images.unsplash.com/photo-1516762689617-e1cffcef479d?auto=format&fit=crop&w=360&q=74');"></div>
+          <div class="thumb" style="background-image: url('https://images.unsplash.com/photo-1504198453319-5ce911bafcde?auto=format&fit=crop&w=360&q=74');"></div>
+        </div>
+        <a class="load-more" href="#">load more</a>
+      </aside>
+    </main>
+  </div>
+</body>
+</html>

@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Collage / Draft 01</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">collage <span class="dim">/ draft 01</span></div>
+    <nav class="sources">
+      <button class="src-tab active" data-src="arena">Are.na</button>
+      <span class="dot">·</span>
+      <button class="src-tab" data-src="cosmos">Cosmos</button>
+    </nav>
+    <div class="actions">
+      <button id="undo-btn" class="ghost" disabled title="undo (⌘Z)">undo</button>
+      <button id="export-btn" class="ghost">export png</button>
+      <button id="clear-btn" class="ghost">clear</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="rail tools">
+      <button class="tool" data-tool="select" title="select / move">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.2">
+          <path d="M5 3 L5 19 L9 15 L11.5 21 L13.5 20 L11 14 L17 14 Z"/>
+        </svg>
+        <span class="tool-num">i.</span> select
+      </button>
+      <button class="tool" data-tool="crop" title="rectangle crop">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.2">
+          <path d="M6 3 V18 H21"/>
+          <path d="M3 6 H18 V21"/>
+        </svg>
+        <span class="tool-num">ii.</span> crop
+      </button>
+      <button class="tool" data-tool="wavy" title="wavy / deckle edge — click an edge of the selected piece">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.2">
+          <path d="M3 12 Q6 8 9 12 T15 12 T21 12"/>
+        </svg>
+        <span class="tool-num">iii.</span> wavy
+      </button>
+      <button class="tool" data-tool="zigzag" title="zigzag / scissor edge — click an edge of the selected piece">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.2">
+          <path d="M3 14 L7 10 L11 14 L15 10 L19 14 L21 12"/>
+        </svg>
+        <span class="tool-num">iv.</span> zigzag
+      </button>
+      <button class="tool" data-tool="tear" title="rough tear — click an edge of the selected piece">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.2">
+          <path d="M3 13 L5 10 L7 13 L9 11 L11 14 L13 10 L15 13 L17 11 L19 14 L21 12"/>
+        </svg>
+        <span class="tool-num">v.</span> tear
+      </button>
+      <button class="tool" data-tool="burnt" title="burnt edge — click an edge of the selected piece">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.2">
+          <path d="M3 14 L5 11 L7 14 L9 11 L11 14 L13 11 L15 14 L17 11 L19 14 L21 13"/>
+          <path d="M5 17 Q7 19 9 17 Q11 19 13 17 Q15 19 17 17 Q19 19 21 17" stroke="#8a4a1a"/>
+        </svg>
+        <span class="tool-num">vi.</span> burnt
+      </button>
+      <button class="tool" data-tool="mask" title="lasso mask — drag a shape on the selected piece">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.2">
+          <path d="M5 6 Q4 12 8 14 Q12 17 16 13 Q20 9 16 6 Q12 4 9 6 Q7 7 7 9" stroke-dasharray="2 2"/>
+          <circle cx="5" cy="6" r="1.5" fill="currentColor"/>
+        </svg>
+        <span class="tool-num">vii.</span> mask
+      </button>
+      <div class="tool-hint" id="tool-hint">click a thumbnail →</div>
+    </aside>
+
+    <section class="surface-wrap">
+      <svg id="surface" class="surface" viewBox="0 0 1400 900" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <pattern id="paper-grid" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#d6cab0" stroke-width="0.5" opacity="0.6"/>
+          </pattern>
+          <filter id="paper-noise" x="0" y="0" width="100%" height="100%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="3"/>
+            <feColorMatrix values="0 0 0 0 0.6  0 0 0 0 0.55  0 0 0 0 0.42  0 0 0 0.06 0"/>
+            <feComposite in2="SourceGraphic" operator="in"/>
+          </filter>
+          <linearGradient id="burn-n" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#2a1505" stop-opacity="0.92"/>
+            <stop offset="0.4" stop-color="#3a200a" stop-opacity="0.55"/>
+            <stop offset="1" stop-color="#3a200a" stop-opacity="0"/>
+          </linearGradient>
+          <linearGradient id="burn-s" x1="0" y1="1" x2="0" y2="0">
+            <stop offset="0" stop-color="#2a1505" stop-opacity="0.92"/>
+            <stop offset="0.4" stop-color="#3a200a" stop-opacity="0.55"/>
+            <stop offset="1" stop-color="#3a200a" stop-opacity="0"/>
+          </linearGradient>
+          <linearGradient id="burn-e" x1="1" y1="0" x2="0" y2="0">
+            <stop offset="0" stop-color="#2a1505" stop-opacity="0.92"/>
+            <stop offset="0.4" stop-color="#3a200a" stop-opacity="0.55"/>
+            <stop offset="1" stop-color="#3a200a" stop-opacity="0"/>
+          </linearGradient>
+          <linearGradient id="burn-w" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#2a1505" stop-opacity="0.92"/>
+            <stop offset="0.4" stop-color="#3a200a" stop-opacity="0.55"/>
+            <stop offset="1" stop-color="#3a200a" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <rect class="paper" width="1400" height="900" fill="#f4ecdb"/>
+        <rect class="paper-noise" width="1400" height="900" fill="url(#paper-grid)" opacity="0.7"/>
+        <g id="pieces"></g>
+        <g id="overlay"></g>
+      </svg>
+      <div class="grid-label">paper grid / 40px</div>
+      <aside id="layer-panel" class="layer-panel" hidden>
+        <div class="layer-head">
+          <span>layers</span>
+          <button id="layer-toggle" class="layer-toggle" title="hide panel">–</button>
+        </div>
+        <ul id="layer-list" class="layer-list"></ul>
+      </aside>
+      <button id="layer-show-btn" class="layer-show" hidden title="show layers">layers</button>
+      <div id="piece-bar" class="piece-bar" hidden>
+        <label class="opacity-control">
+          <span>opacity</span>
+          <input id="opacity-slider" type="range" min="5" max="100" value="100" step="1">
+          <span id="opacity-readout" class="readout">100%</span>
+        </label>
+        <span class="bar-divider"></span>
+        <label class="opacity-control" id="edge-intensity-wrap" hidden>
+          <span>edge</span>
+          <input id="edge-slider" type="range" min="3" max="40" value="12" step="1">
+          <span id="edge-readout" class="readout">12px</span>
+        </label>
+        <button id="reset-edges-btn" class="bar-link" hidden>reset edges</button>
+        <button id="remove-mask-btn" class="bar-link" hidden>remove mask</button>
+      </div>
+    </section>
+
+    <aside class="rail thumbs">
+      <div class="thumb-head">from / <span id="src-name">are.na</span></div>
+      <div id="thumb-grid" class="thumb-grid"><div class="thumb-loading">loading…</div></div>
+      <button id="more-btn" class="more">load more</button>
+    </aside>
+  </main>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
